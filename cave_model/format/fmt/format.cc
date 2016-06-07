@@ -421,7 +421,7 @@ class PrintfArgFormatter :
   }
 
   void visit_custom(Arg::CustomValue c) {
-    fmt::internal::BasicFormatter<Char> formatter(ArgList(), this->writer());
+    fmt::BasicFormatter<Char> formatter(ArgList(), this->writer());
     const Char format_str[] = {'}', 0};
     const Char *format = format_str;
     c.format(&formatter, c.value, &format);

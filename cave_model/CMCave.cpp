@@ -13,6 +13,7 @@
 #include "CMcommon.h"
 #include <iostream>
 #include "CMLog.h"
+#include <math.h>
 
 namespace CM {
 
@@ -89,7 +90,7 @@ void Cave::buildFakeZSurveyPikets() {
 		Piket* curPiket = &pikiIt->second;
 		if (curPiket->hasPriz(MARK_Z_SURVEY) && processedPikets.count(curPiket) == 0) {
             // cчитаем количество соседних пикетов зигзаг-съемки
-            int numAdjZSurvPikets = curPiket->getAdjPiketsWithPriz(MARK_Z_SURVEY).size();
+            int numAdjZSurvPikets = (int)curPiket->getAdjPiketsWithPriz(MARK_Z_SURVEY).size();
 			if (numAdjZSurvPikets == 1) { // если это крайний пикет съемки
 				CMLog a;
                 LOG("start process zig-zag survey");
@@ -145,17 +146,17 @@ void Cave::processZSurveyPiketsChain(const std::list<const Piket*>& chain) {
 			wallsSumm.insert(wallsSumm.end(), linkPiket->allWalls.begin(), linkPiket->allWalls.end());
 			std::vector<const Piket*> linkAdjPkets = linkPiket->getAdjPiketsWithoutPriz(MARK_Z_SURVEY);
             adjPkets.insert(adjPkets.end(), linkAdjPkets.begin(), linkAdjPkets.end()); 
-            priz = priz | linkPiket->getSumPriz();
+            priz = (PiketMark) (priz | linkPiket->getSumPriz());
             
             LOG("   add piket " << linkPiket->id << " to group"); 
         }
 
         if ((linkPiket && linkPiket->hasPriz(MARK_Z_TURN) && !prevLinkWasTurn) || it == chain.end()) {
             prevLinkWasTurn = true;
-            priz = priz & ~MARK_Z_SURVEY & ~MARK_Z_TURN;
-            priz = priz | MARK_Z_SURVEY_FAKE;
+            priz = (PiketMark) (priz & ~MARK_Z_SURVEY & ~MARK_Z_TURN);
+			priz = (PiketMark) (priz | MARK_Z_SURVEY_FAKE);
             LOG("   fix piket with  " << piketsMedNum << " pikets, pos " <<  piketsMedPos << " and " << wallsSumm.size() << " walls");
-			const Piket* fakePiket = addFakePiket(piketsMedPos / piketsMedNum, col, priz, wallsSumm, adjPkets);
+			const Piket* fakePiket = addFakePiket(piketsMedPos / (Real)piketsMedNum, col, priz, wallsSumm, adjPkets);
             piketsMedNum = 0;
             piketsMedPos = V3(0, 0, 0);
             col = Color::None;

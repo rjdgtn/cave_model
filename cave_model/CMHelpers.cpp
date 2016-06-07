@@ -7,6 +7,8 @@
 #include "CMAssertions.h"
 #include "wykobi.hpp"      
 #include "CMtext.h"
+#define _USE_MATH_DEFINES
+#include <math.h> 
 
 namespace CM {
 using namespace wykobi;
@@ -562,64 +564,7 @@ V3 phongSurfNorm(float u, float v, V3 an, V3 bn, V3 cn) {
     
     return n.normalisedCopy();
 }
-
-//V3 besier3x3x3Barycentric(float u, float v, V3 a, V3 an, V3 b, V3 bn, V3 c, V3 cn) {
-//    float controlLength = 1/3.0f;
-//    V3 ab = getControlPoint(a, b, an, controlLength);
-//    V3 ac = getControlPoint(a, c, an, controlLength);
-//    V3 ba = getControlPoint(b, a, bn, controlLength);
-//    V3 bc = getControlPoint(b, c, bn, controlLength);
-//    V3 ca = getControlPoint(c, a, cn, controlLength);
-//    V3 cb = getControlPoint(c, b, cn, controlLength);
-//   
-//    // ab - i
-//    // bc - j
-//    // ca - k
-//    //c - i:0   j:0.5 k:0.5
-//    //a - i:0.5 j:0   k:0.5
-//    //b - i:0.5 j:0.5 k:0
-//                                 
-//    V3 p = (a*(1.0f - v) + b*v)*u + c*(1.0f-u);
-//    float pi = minimum_distance_from_point_to_segment(p.x, p.y, a.x, a.y, b.x, b.y);
-//    float pj = minimum_distance_from_point_to_segment(p.x, p.y, b.x, b.y, c.x, c.y);
-//    float pk = minimum_distance_from_point_to_segment(p.x, p.y, c.x, c.y, a.x, a.y);
-//
-//    float i,j,k;
-//    float pmax = std::max(pi, std::max(pj, pk));
-//    if (pmax == pk) {
-//        k = 0;
-//        i = 1.0f-pi/(pi+pj);       
-//        j = 1.0f-pj/(pi+pj);       
-//    } else if (pmax == pj) {
-//        j = 0;
-//        i = 1.0f-pi/(pi+pk);       
-//        k = 1.0f-pk/(pi+pk);       
-//    } else if (pmax == pi) {
-//        i = 0;
-//        j = 1.0f-pj/(pj+pk);       
-//        k = 1.0f-pk/(pj+pk);       
-//    }
-//      
-////    float k = (1.0f-v) * (1-u); //* ((u < 0.5) ? (u / 0.5f) : (((1.0f - u) / 0.5f)));
-////    float j = v * (1-u); // * ((u < 0.5) ? (u / 0.5f) : (((1.0f - u) / 0.5f)));
-////    float i = u * ((v < 0.5) ? (v / 0.5f) : (((1.0f - v) / 0.5f)));
-//
-////    float ijk = i + j + k;
-////    i /= ijk;
-////    j /= ijk; 
-////    k /= ijk;
-//    
-//    V3 ab_comp = besier3(v, a, ab, ba, b);
-//    V3 bc_comp = besier3(u, c, cb, bc, b);
-//    V3 ca_comp = besier3(u, c, ca, ac, a);
-//
-//    AssertReturn((i + j + k) - 1.0f < 0.01, ;);
-////    V3 res = p;
-////    V3 res = i * (a*(1.0f-v) + b*v) + j * (b*u+c*(1.0f-u)) + k * (c*u+a*(1.0f-u))/2;
-//    V3 res = i * ab_comp + j * bc_comp + k * ca_comp;
-//
-//    return res;
-//}V3 getNormal(V3 a, V3 b, V3 c, V3 sampleNorm) {
+V3 getNormal(V3 a, V3 b, V3 c, V3 sampleNorm) {
     V3 n = (c-a).crossProduct(b-a);
     if (n.angleBetween(sampleNorm) > Radian(M_PI_2)) n = -n;    
 

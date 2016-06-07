@@ -1,10 +1,8 @@
 //---------------------------------------------------------------------------
 #pragma once
-#include "CaveData.h"
-
 #include <vector>           
 #include <map>
-#include "OgrePrerequisites.h" 
+//#include "OgrePrerequisites.h" 
 #include "CMHelpers.h"
 #include <unordered_map>    
 #include <unordered_set>      

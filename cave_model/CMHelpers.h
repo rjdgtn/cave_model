@@ -4,6 +4,7 @@
 #include "OgreMath.h"
 #include "OgreVector2.h"
 #include "wykobi_wrap.h"
+#include <set>
 
 namespace CM {
 
@@ -14,7 +15,7 @@ using namespace std;
 #define CONTERCLOCKWISE false
 
 
-V3 projectPointToLine(V3 lineA, V3 lineB, V3 point) {
+inline V3 projectPointToLine(V3 lineA, V3 lineB, V3 point) {
     V3 A = lineA;
     V3 B = lineB;
     V3 P = point;
@@ -104,7 +105,7 @@ struct Vertice {
     x(0), y(0), z(0) { }
 
     Vertice(const V3& vec):
-    x(vec.x / 2.0f), y(vec.y / 2.0f), z(vec.z / 2.0f) { }
+    x((int)(vec.x / 2.0f)), y((int)(vec.y / 2.0f)), z((int)(vec.z / 2.0f)) { }
 
     bool operator< (const Vertice& vtc) const {
         return x < vtc.x || ( x == vtc.x && (y < vtc.y || y == vtc.y && z < vtc.z)); 

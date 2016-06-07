@@ -1,5 +1,7 @@
 #pragma once
 #include "ogre/OgreVector3.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 namespace CM {
 
@@ -264,7 +266,7 @@ enum PiketMark {
 
 struct PiketInfo {
 	PiketInfo(): id(getUniqId()), pos(0,0,0), priz(MARK_NONE), hasWalls(0) { }
-	long long id;
+	int id;
 	std::string name;
 	std::string label;
 	V3 pos;

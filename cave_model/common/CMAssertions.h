@@ -7,7 +7,7 @@
 
 #define AssertReturn(var, exec) \
 if(!(var)) { \
-_asm {int 3};\
+/*_asm {int 3};*/\
 exec; \
 }\
 

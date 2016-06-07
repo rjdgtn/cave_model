@@ -350,7 +350,7 @@ Color Piket::getColorOfP3DWithPriz(PiketMark priz) const {
 PiketMark Piket::getSumPriz() const {
     PiketMark res = MARK_NONE;
     for (int i = 0; i < allP3D.size(); i++) {
-       res = res | allP3D[i].priz;
+       res = (PiketMark)(res | allP3D[i].priz);
     }
     return res;
 }
