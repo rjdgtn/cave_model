@@ -5,6 +5,9 @@
 #include "CMDebug.h"
 
 using namespace wykobi;
+using namespace Ogre;
+using namespace std;
+
 namespace CM {
 
 struct PreperedForClassifyWall {

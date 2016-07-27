@@ -74,19 +74,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)\cave_model;$(SolutionDir)\cave_model\common;$(SolutionDir)\cave_model\format;$(SolutionDir)\cave_model\ogre;$(SolutionDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\cave_model;$(ProjectDir)\cave_model\common;$(ProjectDir)\cave_model\format;$(ProjectDir)\cave_model\ogre;$(ProjectDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)\cave_model;$(SolutionDir)\cave_model\common;$(SolutionDir)\cave_model\format;$(SolutionDir)\cave_model\ogre;$(SolutionDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjecctDir)\cave_model;$(ProjecctDir)\cave_model\common;$(ProjecctDir)\cave_model\format;$(ProjecctDir)\cave_model\ogre\;$(ProjecctDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)\cave_model;$(SolutionDir)\cave_model\common;$(SolutionDir)\cave_model\format;$(SolutionDir)\cave_model\ogre;$(SolutionDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjecctDir)\cave_model;$(ProjecctDir)\cave_model\common;$(ProjecctDir)\cave_model\format;$(ProjecctDir)\cave_model\ogre\;$(ProjecctDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)\cave_model;$(SolutionDir)\cave_model\common;$(SolutionDir)\cave_model\format;$(SolutionDir)\cave_model\ogre;$(SolutionDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjecctDir)\cave_model;$(ProjecctDir)\cave_model\common;$(ProjecctDir)\cave_model\format;$(ProjecctDir)\cave_model\ogre\;$(ProjecctDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -98,6 +98,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies />
+      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -140,7 +141,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cave_model.h" />
+    <ClInclude Include="dNetCMCave.h" />
     <ClInclude Include="cave_model\CMCave.h" />
     <ClInclude Include="cave_model\CMDebug.h" />
     <ClInclude Include="cave_model\CMHelpers.h" />
@@ -178,7 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AssemblyInfo.cpp" />
-    <ClCompile Include="cave_model.cpp" />
+    <ClCompile Include="dNetCMCave.cpp" />
     <ClCompile Include="cave_model\CMCave.cpp" />
     <ClCompile Include="cave_model\CMDebug.cpp" />
     <ClCompile Include="cave_model\CMHelpers.cpp" />

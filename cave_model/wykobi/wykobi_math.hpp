@@ -24,6 +24,9 @@
 #include <cmath>
 #include <limits>
 
+#undef max
+#undef min
+
 namespace wykobi
 {
    #define WYKOBI_DOUBLE_PRECISION

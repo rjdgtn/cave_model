@@ -31,6 +31,10 @@ THE SOFTWARE.
 #include "OgrePrerequisites.h"
 #include "math.h"
 #include <iostream>
+#include <algorithm>
+
+#undef max
+#undef min
 
 namespace Ogre
 {

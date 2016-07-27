@@ -20,7 +20,11 @@
 
 
 #include "wykobi.hpp"
+#ifdef __cplusplus_cli
 #include <cstddef>
+#else
+#include <stdlib>
+#endif
 namespace wykobi
 {
    template<typename T>

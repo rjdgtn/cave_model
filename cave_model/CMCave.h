@@ -14,13 +14,14 @@ typedef std::vector<V3> vectorV3;
 
 class Cave {
 public:
-	Cave();
+	Cave(float pointsInMeter = 100.0f);
 	~Cave();
     bool setCaveViewPrefs(const CaveViewPrefs& prefs);
 
 	void addVertice(const PiketInfo& piketInfo, int equatesVerticeId = 0);
 	void addEdge(int verticeId0, int verticeId1);
-	void addWall(const Wall& wall, int linkToVerticeId, int parentPiketId);
+	void addEdge(const EdgeInfo& info);
+	void addWall(const Wall& wall, int linkToVerticeId, int parentPiketId = 0);
 
 	void finishInit();
 
@@ -29,7 +30,7 @@ public:
 	bool isOutputEnabled(OuputType type) { return outputLayers[type]; }
 
 protected:
-//    void buildPikets(); // создает граф пикетов из массивов P3D и W3D
+	
     void buildFakeZSurveyPikets(); // обрабатывает зигзаговую съемку создавая дополнительные пикеты 
     void buildEquatesMap();
 	void buildWallsObject(); // заполняет графический объект стен               
@@ -112,12 +113,14 @@ protected:
     void processZSurveyPiketsChain(const std::list<const Piket*>& chain);
 
 //    int getFreePiketId() const;
-	const Piket* addFakePiket(V3 pos, Color col, PiketMark priz, const std::vector<Wall>& walls, const std::vector<const Piket*>& adjPkets);
+	const Piket* addFakePiket(V3 pos, Color col, PiketMark priz, const std::vector<Wall>& walls, const std::vector<EdgeInfo>& edges);
     
     static std::vector<std::pair<bool, int> > calcTriangulationOrdertConvexPolyMode(const std::vector<WallProj>& a, const std::vector<WallProj>& b, bool clockwise, bool force_convex);
     static std::vector<std::pair<bool, int> > calcTriangulationOrdertConvexPolyMode(const std::vector<WallProj>& a, int aStart, int aEnd, const std::vector<WallProj>& b, int bStart, int bEnd, bool clockwise, bool force_convex) ;
 
 	Color getColorForPiket(const Piket* piket);
+	Color getColorForPiketByEdges(const Piket* piket);
+	const Color& getColorForEdge(const Piket* from, const Piket* to);
 	Color getDepthColor(float depthRate);
     
     static Color getColorByRatio(const std::vector<std::pair<float, Color> >& colors, float rate);
@@ -137,6 +140,7 @@ protected:
 	bool wasInited;
 
 	std::tr1::unordered_map<int, Piket> pikets;
+	std::map<std::pair<int, int>, EdgeInfo> edges;
 	CaveViewPrefs caveViewPrefs;
 
 	V3 boxMin;
@@ -158,6 +162,8 @@ protected:
 	std::tr1::unordered_map<OuputType, std::vector<OutputLine> > outputLines;
 	std::tr1::unordered_map<OuputType, bool> outputLayers;
 
+
+	float ptsInMeter{ 0.0 };
 };
 
 }

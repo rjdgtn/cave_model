@@ -1,15 +1,12 @@
 //---------------------------------------------------------------------------
 #pragma once          
 #include "CMTypes.h"
-#include "OgreMath.h"
-#include "OgreVector2.h"
-#include "wykobi_wrap.h"
 #include <set>
-
+#include "OgreVector2.h"
+#include "OgreMath.h"
+#include "wykobi_wrap.h"
 namespace CM {
 
-using namespace Ogre;  
-using namespace std;
 
 #define CLOCKWISE true
 #define CONTERCLOCKWISE false
@@ -135,7 +132,7 @@ protected:
 };
 
 struct WallProj {
-    WallProj(int idx, V2 posBySelfDir, Radian to0XAngleBySelfDir, V2 posByGlobalDir, Radian to0XAngleByGlobalDir):
+    WallProj(int idx, V2 posBySelfDir, Ogre::Radian to0XAngleBySelfDir, V2 posByGlobalDir, Ogre::Radian to0XAngleByGlobalDir):
     idx(idx), posBySelfDir(posBySelfDir), to0XAngleBySelfDir(to0XAngleBySelfDir), posByGlobalDir(posByGlobalDir), to0XAngleByGlobalDir(to0XAngleByGlobalDir) { }
                 
     static bool compareBySelf0XAngle(const WallProj& w1, const WallProj& w2);
@@ -143,9 +140,9 @@ struct WallProj {
     
     int idx;
     V2 posBySelfDir;
-    Radian to0XAngleBySelfDir;
+	Ogre::Radian to0XAngleBySelfDir;
     V2 posByGlobalDir;
-    Radian to0XAngleByGlobalDir;
+	Ogre::Radian to0XAngleByGlobalDir;
 };
 
 // возврадает отсортированные по углу вокруг оси selfDirrection проходящей чере center

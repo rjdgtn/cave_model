@@ -259,7 +259,7 @@ namespace wykobi
       template  bool robust_perpendicular<T>(const segment<T,3>& segment1, const segment<T,3>& segment2, const T& epsilon);\
       template  bool robust_perpendicular<T>(const line<T,3>& line1, const line<T,3>& line2, const T& epsilon);\
 
-#define INSTANTIATE_WYKOBI_PART_7(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_8(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  bool robust_perpendicular<T>(const line<T,2>& line, const segment<T,2>& segment, const T& epsilon);\
       template  bool line_to_line_intersect<T>(const T& x1, const T& y1, const T& x2, const T& y2, const T& x3, const T& y3, const T& x4, const T& y4);\
       template  bool line_to_line_intersect<T>(const line<T,2>& line1, const line<T,2>& line2);\
@@ -292,7 +292,7 @@ namespace wykobi
       template  bool circle_in_circle<T>(const circle<T>& circle1, const circle<T>& circle2);\
       template  bool is_tangent<T>(const segment<T,2>& segment, const circle<T>& circle);\
 
-#define INSTANTIATE_WYKOBI_PART_8(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_9(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  bool point_of_reflection<T>(const T& sx1, const T& sy1, const T& sx2, const T& sy2, const T& p1x, const T& p1y, const T& p2x, const T& p2y, T& rpx, T& rpy);\
       template  bool point_of_reflection<T>(const segment<T,2>& segment, const point2d<T>&point1, const point2d<T>&point2, point2d<T>&reflection_point);\
       template  segment<T,2> edge<T>(const triangle<T,2>& triangle, const std::size_t& edge_index);\
@@ -328,7 +328,7 @@ namespace wykobi
       template  segment<T,2> create_parallel_segment_on_point<T>(const line<T,2>& line, const point2d<T>& point);\
       template  segment<T,3> create_parallel_segment_on_point<T>(const line<T,3>& line, const point3d<T>& point);\
 
-#define INSTANTIATE_WYKOBI_PART_9(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_10(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  bool point_in_rectangle<T>(const T& px, const T& py, const T& x1, const T& y1, const T& x2, const T& y2);\
       template  bool point_in_rectangle<T>(const point2d<T>& point, const T& x1, const T& y1, const T& x2, const T& y2);\
       template  bool point_in_rectangle<T>(const T& px, const T& py, const rectangle<T>& rectangle);\
@@ -356,7 +356,7 @@ namespace wykobi
       template  bool point_in_sphere<T>(const T& px, const T& py, const T& pz, const sphere<T>& sphere);\
       template  bool point_in_sphere<T>(const point3d<T>& point, const sphere<T>& sphere);\
 
-#define INSTANTIATE_WYKOBI_PART_10(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_11(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  bool point_in_three_point_circle<T>(const T& px, const T& py, const T& x1, const T& y1, const T& x2, const T& y2, const T& x3, const T& y3);\
       template  bool point_in_three_point_circle<T>(const point2d<T>& point, const point2d<T>& point1, const point2d<T>& point2, const point2d<T>& point3);\
       template  bool point_in_three_point_circle<T>(const point2d<T>& point, const triangle<T,2> triangle);\
@@ -388,7 +388,7 @@ namespace wykobi
       template  bool point_on_bezier<T>(const point3d<T>& point, const quadratic_bezier<T,3>& bezier, const std::size_t& steps, const T& fuzzy);\
       template  bool point_on_bezier<T>(const point3d<T>& point, const cubic_bezier<T,3>& bezier, const std::size_t& steps, const T& fuzzy);\
 
-#define INSTANTIATE_WYKOBI_PART_11(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_12(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  point2d<T> isogonal_conjugate<T>(const point2d<T>& point, const triangle<T,2>& triangle);\
       template  point3d<T> isogonal_conjugate<T>(const point3d<T>& point, const triangle<T,3>& triangle);\
       template  point2d<T> cyclocevian_conjugate<T>(const point2d<T>& point, const triangle<T,2>& triangle);\
@@ -425,7 +425,7 @@ namespace wykobi
       template  triangle<T,2> create_pedal_triangle<T>(const point2d<T>& point, const triangle<T,2>& triangle);\
       template  triangle<T,3> create_pedal_triangle<T>(const point3d<T>& point, const triangle<T,3>& triangle);\
 
-#define INSTANTIATE_WYKOBI_PART_12(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_13(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  triangle<T,2> create_antipedal_triangle<T>(const point2d<T>& point, const triangle<T,2>& triangle);\
       template  triangle<T,2> create_excentral_triangle<T>(const triangle<T,2>& triangle);\
       template  triangle<T,3> create_excentral_triangle<T>(const triangle<T,3>& triangle);\
@@ -459,7 +459,7 @@ namespace wykobi
       template  point2d<T> circumcenter<T>(const point2d<T>& point1, const point2d<T>& point2, const point2d<T>& point3);\
       template  point3d<T> circumcenter<T>(const point3d<T>& point1, const point3d<T>& point2, const point3d<T>& point3);\
 
-#define INSTANTIATE_WYKOBI_PART_13(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_14(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  point2d<T> circumcenter<T>(const triangle<T,2>& triangle);\
       template  point3d<T> circumcenter<T>(const triangle<T,3>& triangle);\
       template  circle<T> circumcircle<T>(const T& x1, const T& y1, const T& x2, const T& y2, const T& x3, const T& y3);\
@@ -489,7 +489,7 @@ namespace wykobi
       template  void circle_tangent_points<T>(const circle<T>& circle, const point2d<T>& point, point2d<T>& point1, point2d<T>& point2);\
       template  line<T,2> tangent_line<T>(const circle<T>& circle, const point2d<T>& point);\
 
-#define INSTANTIATE_WYKOBI_PART_14(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_15(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  line<T,2> create_line_from_bisector<T>(const T& x1, const T& y1, const T& x2, const T& y2, const T& x3, const T& y3);\
       template  segment<T,2> create_segment_from_bisector<T>(const T& x1, const T& y1, const T& x2, const T& y2, const T& x3, const T& y3);\
       template  line<T,3> create_line_from_bisector<T>(const T& x1, const T& y1, const T& z1, const T& x2, const T& y2, const T& z2, const T& x3, const T& y3, const T& z3);\
@@ -513,7 +513,7 @@ namespace wykobi
       template  void order_sensitive_closest_point_on_line_from_point<T>(const T& x1, const T& y1, const T& x2, const T& y2, const T& px, const T& py, T& nx, T& ny);\
       template  void order_sensitive_closest_point_on_line_from_point<T>(const T& x1, const T& y1, const T& z1, const T& x2, const T& y2, const T& z2, const T& px, const T& py, const T& pz, T& nx, T& ny, T& nz);\
 
-#define INSTANTIATE_WYKOBI_PART_15(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_16(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  void closest_point_on_ray_from_point<T>(const T& ox, const T& oy, const T& dx, const T& dy, const T& px, const T& py, T& nx, T& ny);\
       template  void closest_point_on_ray_from_point<T>(const T& ox, const T& oy, const T& oz, const T& dx, const T& dy, const T& dz, const T& px, const T& py, const T& pz, T& nx, T& ny, T& nz);\
       template  point2d<T> closest_point_on_segment_from_point<T>(const T& x1, const T& y1, const T& x2, const T& y2, const T& px, const T& py);\
@@ -540,7 +540,7 @@ namespace wykobi
       template  point2d<T> closest_point_on_rectangle_from_point<T>(const T& x1, const T& y1, const T& x2, const T& y2, const T& px, const T& py);\
       template  point2d<T> closest_point_on_rectangle_from_point<T>(const rectangle<T>& rectangle, const T& px, const T& py);\
 
-#define INSTANTIATE_WYKOBI_PART_16(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_17(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  point2d<T> closest_point_on_rectangle_from_point<T>(const rectangle<T>& rectangle, const point2d<T>& point);\
       template  void closest_point_on_box_from_point<T>(const T& x1, const T& y1, const T& z1, const T& x2, const T& y2, const T& z2, const T& px, const T& py, const T& pz, T& nx, T& ny, T& nz);\
       template  point3d<T> closest_point_on_box_from_point<T>(const T& x1, const T& y1, const T& z1, const T& x2, const T& y2, const T& z2, const T& px, const T& py, const T& pz);\
@@ -567,7 +567,7 @@ namespace wykobi
       template  T minimum_distance_from_point_to_segment<T>(const point2d<T>& point, const segment<T,2>& segment);\
       template  T minimum_distance_from_point_to_segment<T>(const point3d<T>& point, const segment<T,3>& segment);\
 
-#define INSTANTIATE_WYKOBI_PART_17(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_18(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  T minimum_distance_from_point_to_line<T>(const T& px, const T& py, const T& x1, const T& y1, const T& x2, const T& y2);\
       template  T minimum_distance_from_point_to_line<T>(const T& px, const T& py, const T& pz, const T& x1, const T& y1, const T& z1, const T& x2, const T& y2, const T& z2);\
       template  T minimum_distance_from_point_to_line<T>(const point2d<T>& point, const line<T,2>& line);\
@@ -605,7 +605,7 @@ namespace wykobi
       template  point3d<T> centroid<T>(const box<T,3>& box);\
       template  point2d<T> centroid<T>(const polygon<T,2>& polygon);\
 
-#define INSTANTIATE_WYKOBI_PART_18(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_19(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  bool point_in_convex_polygon<T>(const T& px, const T& py, const polygon<T,2>& polygon);\
       template  bool point_in_convex_polygon<T>(const point2d<T>& point, const polygon<T,2>& polygon);\
       template  bool point_on_polygon_edge<T>(const T& px, const T& py, const polygon<T,2>& polygon);\
@@ -644,7 +644,7 @@ namespace wykobi
       template  quadix<T,2> mirror<T>(const quadix<T,2>& quadix, const line<T,2>& mirror_axis);\
       template  circle<T> mirror<T>(const circle<T>& circle, const line<T,2>& mirror_axis);\
 	  
-#define INSTANTIATE_WYKOBI_PART_19(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_20(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  polygon<T,2> mirror<T>(const polygon<T,2>& polygon, const line<T,2>& mirror_axis);\
       template  point3d<T> mirror<T>(const point3d<T>& point, const line<T,3>& mirror_line);\
       template  segment<T,3> mirror<T>(const segment<T,3>& segment, const line<T,3>& mirror_axis);\
@@ -680,7 +680,7 @@ namespace wykobi
       template  point2d<T> invert_point<T>(const point2d<T>& point, const circle<T>& circle);\
       template  point3d<T> invert_point<T>(const point3d<T>& point, const sphere<T>& sphere);\
 	  
-#define INSTANTIATE_WYKOBI_PART_20(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_21(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  point2d<T> antipodal_point<T>(const point2d<T>& point, const circle<T>& circle);\
       template  point3d<T> antipodal_point<T>(const point3d<T>& point, const sphere<T>& sphere);\
       template  T distance<T>(const T& x1, const T& y1, const T& x2, const T& y2);\
@@ -724,7 +724,7 @@ namespace wykobi
       template  T lay_distance<T>(const point2d<T>& point, const ray<T,2>& ray);\
       template  T lay_distance<T>(const point3d<T>& point, const ray<T,3>& ray);\
 	  
-#define INSTANTIATE_WYKOBI_PART_21(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_22(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  T lay_distance<T>(const point3d<T>& point, const plane<T,3>& plane);\
       template  T lay_distance<T>(const segment<T,2>& segment1, const segment<T,2>& segment2);\
       template  T lay_distance<T>(const segment<T,3>& segment1, const segment<T,3>& segment2);\
@@ -765,7 +765,7 @@ namespace wykobi
       template  polygon<T,2> minkowski_sum<T>(const triangle<T,2>& triangle, const quadix<T,2>& quadix);\
       template  polygon<T,2> minkowski_sum<T>(const triangle<T,2>& triangle, const circle<T>& circle);\
 	  
-#define INSTANTIATE_WYKOBI_PART_22(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_23(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  polygon<T,2> minkowski_sum<T>(const quadix<T,2>& quadix, const circle<T>& circle);\
       template  polygon<T,2> minkowski_sum<T>(const quadix<T,2>& quadix, const rectangle<T>& rectangle);\
       template  polygon<T,2> minkowski_sum<T>(const rectangle<T>& rectangle, const circle<T>& circle);\
@@ -795,7 +795,7 @@ namespace wykobi
       template  T distance_from_point_to_circle_center<T>(const point2d<T>& point, const circle<T>& circle);\
       template  T distance_from_point_to_sphere_center<T>(const point3d<T>& point, const sphere<T>& sphere);\
 	  
-#define INSTANTIATE_WYKOBI_PART_23(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_24(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  T span_length(const rectangle<T>& rect);\
       template  T span_length(const box<T,3>& box);\
       template  void project_point_t<T>(const T& srcx, const T& srcy, const T& destx, const T& desty, const T& t, T& nx, T& ny);\
@@ -832,7 +832,7 @@ namespace wykobi
       template  polygon<T,2> project_object<T>(const polygon<T,2>& polygon, const T& angle, const T& distance);\
       template  segment<T,2> project_onto_axis<T>(const point2d<T>& point, const line<T,2>& axis);\
 	  
-#define INSTANTIATE_WYKOBI_PART_24(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_25(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  segment<T,2> project_onto_axis<T>(const triangle<T,2>& triangle, const line<T,2>& axis);\
       template  segment<T,2> project_onto_axis<T>(const rectangle<T>& rectangle, const line<T,2>& axis);\
       template  segment<T,2> project_onto_axis<T>(const quadix<T,2>& quadix, const line<T,2>& axis);\
@@ -863,7 +863,7 @@ namespace wykobi
       template  void generate_bezier<T,OutputIterator2d>(const quadratic_bezier<T,2>& bezier, OutputIterator2d out, const std::size_t& point_count);\
       template  void generate_bezier<T,OutputIterator3d>(const quadratic_bezier<T,3>& bezier, OutputIterator3d out, const std::size_t& point_count);\
 	  
-#define INSTANTIATE_WYKOBI_PART_25(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_26(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  void generate_bezier<T,OutputIterator2d>(const cubic_bezier<T,2>& bezier, OutputIterator2d out, const std::size_t& point_count);\
       template  void generate_bezier<T,OutputIterator3d>(const cubic_bezier<T,3>& bezier, OutputIterator3d out, const std::size_t& point_count);\
       template  T bezier_curve_length<T>(const quadratic_bezier<T,2>& bezier, const std::size_t& point_count);\
@@ -899,7 +899,7 @@ namespace wykobi
       template  int out_code<T>(const point2d<T>& point, const rectangle<T>& rectangle);\
       template  bool clip<T>(const T& x1, const T& y1, const T& x2, const T& y2, const T& x3, const T& y3, const T& x4, const T& y4, T& cx1,T& cy1, T& cx2,T& cy2);\
 	  
-#define INSTANTIATE_WYKOBI_PART_26(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_27(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  bool clip<T>(const T& x1, const T& y1, const T& z1, const T& x2, const T& y2, const T& z2, const T& x3, const T& y3, const T& z3, const T& x4, const T& y4, const T& z4, T& cx1,T& cy1,T& cz1, T& cx2,T& cy2,T& cz2);\
       template  bool clip<T>(const segment<T,2>& src_segment, const rectangle<T>& rectangle, segment<T,2>& csegment);\
       template  bool clip<T>(const segment<T,2>& src_segment, const triangle<T,2>& triangle,segment<T,2>& csegment);\
@@ -940,7 +940,7 @@ namespace wykobi
       template  void rotate<T>(const T& rx, const T& ry, const T& rz, const T& x, const T& y, const T& z, T& nx, T& ny, T& nz);\
       template  void rotate<T>(const T& rx, const T& ry, const T& rz, const T& x, const T& y, const T& z, const T& ox, const T& oy, const T& oz, T& nx, T& ny, T& nz);\
 	  
-#define INSTANTIATE_WYKOBI_PART_27(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_28(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  point3d<T> rotate<T>(const T& rx, const T& ry, const T& rz, const point3d<T>& point);\
       template  point3d<T> rotate<T>(const T& rx, const T& ry, const T& rz, const point3d<T>& point, const point3d<T>& opoint);\
       template  segment<T,3> rotate<T>(const T& rx, const T& ry, const T& rz, const segment<T,3>& segment);\
@@ -972,7 +972,7 @@ namespace wykobi
       template  triangle<T,3> fast_rotate<T>(const int rx, const int ry, const int rz, const triangle<T,3>& triangle);\
       template  triangle<T,3> fast_rotate<T>(const int rx, const int ry, const int rz, const triangle<T,3>& triangle, const point3d<T>& opoint);\
 	  
-#define INSTANTIATE_WYKOBI_PART_28(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_29(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  quadix<T,3> fast_rotate<T>(const int rx, const int ry, const int rz, const quadix<T,3>& quadix);\
       template  quadix<T,3> fast_rotate<T>(const int rx, const int ry, const int rz, const quadix<T,3>& quadix, const point3d<T>& opoint);\
       template  polygon<T,3> fast_rotate<T>(const int rx, const int ry, const int rz, const polygon<T,3>& polygon);\
@@ -1012,7 +1012,7 @@ namespace wykobi
       template  point3d<T> translate<T>(const T& delta, const point3d<T>& point);\
       template  line<T,3> translate<T>(const T& delta, const line<T,3>& line);\
 	  
-#define INSTANTIATE_WYKOBI_PART_29(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_30(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  segment<T,3> translate<T>(const T& delta, const segment<T,3>& segment);\
       template  triangle<T,3> translate<T>(const T& delta, const triangle<T,3>& triangle);\
       template  quadix<T,3> translate<T>(const T& delta, const quadix<T,3>& quadix);\
@@ -1056,7 +1056,7 @@ namespace wykobi
       template  void aabb<T>(const circle<T>& circle, T& x1, T& y1, T& x2, T& y2);\
       template  void aabb<T>(const polygon<T,2>& polygon,T& x1, T& y1, T& x2, T& y2);\
 	  
-#define INSTANTIATE_WYKOBI_PART_30(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_31(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  box<T,3> aabb<T>(const segment<T,3>& segment);\
       template  box<T,3> aabb<T>(const triangle<T,3>& triangle);\
       template  box<T,3> aabb<T>(const box<T,3>& rectangle);\
@@ -1097,7 +1097,7 @@ namespace wykobi
       template  void generate_random_points<T>(const quadix<T,2>& quadix, const std::size_t& point_count, OutputIterator2d out);\
       template  void generate_random_points<T>(const quadix<T,3>& quadix, const std::size_t& point_count, OutputIterator2d out);\
 	  
-#define INSTANTIATE_WYKOBI_PART_31(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
+#define INSTANTIATE_WYKOBI_PART_32(T,InputIterator2d,InputIterator3d,OutputIterator2d,OutputIterator3d)\
       template  void generate_random_points<T>(const circle<T>& circle, const std::size_t& point_count, OutputIterator2d out);\
       template  void generate_random_object<T>(const T& x1, const  T& y1, const  T& x2, const  T& y2, segment<T,2>& segment);\
       template  void generate_random_object<T>(const T& x1, const T& y1, const T& x2, const T& y2, rectangle<T>& rectangle);\
@@ -1457,7 +1457,7 @@ namespace wykobi
    INSTANTIATE_WYKOBI_PART_29(float,flt_pnt_2d,flt_pnt_3d,flt_pnt_2d,flt_pnt_3d)
    INSTANTIATE_WYKOBI_PART_30(float,flt_pnt_2d,flt_pnt_3d,flt_pnt_2d,flt_pnt_3d)
    INSTANTIATE_WYKOBI_PART_31(float,flt_pnt_2d,flt_pnt_3d,flt_pnt_2d,flt_pnt_3d)
-//   INSTANTIATE_WYKOBI_PART_32(float,flt_pnt_2d,flt_pnt_3d,flt_pnt_2d,flt_pnt_3d)
+   INSTANTIATE_WYKOBI_PART_32(float,flt_pnt_2d,flt_pnt_3d,flt_pnt_2d,flt_pnt_3d)
    INSTANTIATE_WYKOBI_PART_33(float,flt_pnt_2d,flt_pnt_3d,flt_pnt_2d,flt_pnt_3d)
    INSTANTIATE_WYKOBI_PART_34(float,flt_pnt_2d,flt_pnt_3d,flt_pnt_2d,flt_pnt_3d)
    INSTANTIATE_WYKOBI_PART_35(float,flt_pnt_2d,flt_pnt_3d,flt_pnt_2d,flt_pnt_3d) 

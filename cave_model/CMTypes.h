@@ -185,6 +185,10 @@ struct Color {
 	Color(): r(1), g(1), b(1), a(1) {}
 	Color(float r, float g,	float b, float a = 1.0f): r(r), g(g), b(b), a(a) {}
 
+	bool operator!= (const Color& c1) const {
+		return !(*this == c1);
+	}
+
 	bool operator== (const Color& c1) const {
 		return r == c1.r && g == c1.g && b == c1.b && a == c1.a;
 	}
@@ -193,8 +197,22 @@ struct Color {
 		return Color(r + c1.r, g + c1.g, b + c1.b, a + c1.a);
 	}
 
+	void operator+= (const Color& c1) {
+		r += c1.r;
+		g += c1.g;
+		b += c1.b;
+		a += c1.a;
+	}
+
 	Color operator/ (float f) const {
 		return Color(r / f, g / f, b / f, a / f);
+	}
+
+	void operator/= (float f) {
+		r /= f;
+		g /= f;
+		b /= f;
+		a /= f;
 	}
 
 	Color operator* (float f) const {
@@ -211,6 +229,8 @@ struct Color {
 	float g;
 	float b;
 	float a;
+
+	bool isNone() const { return *this == None; }
 };
 
 inline Color operator* (float f, const Color& c) {
@@ -219,14 +239,9 @@ inline Color operator* (float f, const Color& c) {
 
 enum OuputType {
 	OT_UNKNOW,
-//	OT_STATION,
 	OT_THREAD,
-//	OT_DIMENSION,
-//	OT_CUBE,
 	OT_WALL,
 	OT_WALL_CUTS,
-//	OT_WALL_LINES,
-//	OT_LINE,
 	OT_DEBUG,
     OT_DEBUG2,
     OT_BOX,
@@ -276,5 +291,18 @@ struct PiketInfo {
 
 	static int getUniqId();
 };
+
+struct EdgeInfo {
+	EdgeInfo() : fromPiketId(0), toPiketId(0) { }
+	EdgeInfo(int from, int to, const Color& col = Color::None) : fromPiketId(from), toPiketId(to), col(col) { }
+	int fromPiketId;
+	int toPiketId;
+	Color col;
+};
+
+inline bool operator<(const std::pair<int, int>& p1, const std::pair<int, int>& p2) {
+	if (p1.first != p2.first) return p1.first < p2.first;
+	else return p1.second < p2.second;
+}
 
 }

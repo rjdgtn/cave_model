@@ -22,9 +22,10 @@ using namespace tr1;
 using namespace Ogre;
 using namespace wykobi;
 
-Cave::Cave():
+Cave::Cave(float pointsInMeter):
 debugTriangulationAlgo(false),
-wasInited(false) {
+wasInited(false),
+ptsInMeter(pointsInMeter) {
 
 }
 
@@ -47,7 +48,10 @@ Cave::~Cave() {
 }
 
 bool Cave::setCaveViewPrefs(const CaveViewPrefs& prefs) {                                                                        	
-	if (!wasInited) return false;
+	if (!wasInited) {
+		caveViewPrefs = prefs;
+		return false;
+	}
 	
     caveViewPrefs.wallsSurfaceMode = prefs.wallsSurfaceMode;   
     caveViewPrefs.showDebug = prefs.showDebug;               
@@ -129,23 +133,39 @@ void Cave::processZSurveyPiketsChain(const std::list<const Piket*>& chain) {
 
     int piketsMedNum = 0;
     V3 piketsMedPos(0, 0, 0);
-    Color col = Color::None;
+	Color col = Color::None;
+	int edgeColNum = 0;
+	Color edgeCol = Color::None;
     PiketMark priz = MARK_NONE;
 	std::vector<Wall> wallsSumm;
-    std::vector<const Piket*> adjPkets;
+	std::vector<EdgeInfo> externalEdges;
+	const Piket* prevPiket = NULL;
+	const Piket* prevFakePiket = NULL;
+	//std::vector<Color> adjPketsEdgesColors;
     
     bool prevLinkWasTurn = false;;
 	std::list<const Piket*>::const_iterator it = chain.begin();
-    while (true) {              
-		const Piket* linkPiket = NULL;
+	while (true) {
+		const Piket* linkPiket = NULL;		
         if (it != chain.end()) {
+			prevPiket = linkPiket;
             linkPiket = *it; 
             piketsMedNum++;
 			piketsMedPos += linkPiket->pos;
-            if (col == Color::None) col = linkPiket->getColorOfP3DWithPriz(MARK_Z_SURVEY);
+            col += linkPiket->getColorOfP3DWithPriz(MARK_Z_SURVEY);
 			wallsSumm.insert(wallsSumm.end(), linkPiket->allWalls.begin(), linkPiket->allWalls.end());
 			std::vector<const Piket*> linkAdjPkets = linkPiket->getAdjPiketsWithoutPriz(MARK_Z_SURVEY);
-            adjPkets.insert(adjPkets.end(), linkAdjPkets.begin(), linkAdjPkets.end()); 
+            //adjPkets.insert(adjPkets.end(), linkAdjPkets.begin(), linkAdjPkets.end()); 
+			for (int i = 0; i < linkAdjPkets.size(); i++) {
+				externalEdges.push_back(EdgeInfo(linkAdjPkets[i]->id, 0, getColorForEdge(linkPiket, linkAdjPkets[i])));
+			}
+			if (prevPiket) {
+				Color edgeColor = getColorForEdge(prevPiket, linkPiket);
+				if (!edgeColor.isNone()) {
+					edgeColNum++;
+					edgeCol += edgeColor;
+				}
+			}
             priz = (PiketMark) (priz | linkPiket->getSumPriz());
             
             LOG("   add piket " << linkPiket->id << " to group"); 
@@ -155,15 +175,25 @@ void Cave::processZSurveyPiketsChain(const std::list<const Piket*>& chain) {
             prevLinkWasTurn = true;
             priz = (PiketMark) (priz & ~MARK_Z_SURVEY & ~MARK_Z_TURN);
 			priz = (PiketMark) (priz | MARK_Z_SURVEY_FAKE);
+			col /= piketsMedNum;
+			if (prevFakePiket) {
+				if (!edgeCol.isNone()) {
+					edgeCol /= edgeColNum;
+					externalEdges.push_back(EdgeInfo(prevFakePiket->id, 0, edgeCol));
+				}
+			}
             LOG("   fix piket with  " << piketsMedNum << " pikets, pos " <<  piketsMedPos << " and " << wallsSumm.size() << " walls");
-			const Piket* fakePiket = addFakePiket(piketsMedPos / (Real)piketsMedNum, col, priz, wallsSumm, adjPkets);
+			const Piket* fakePiket = addFakePiket(piketsMedPos / (Real)piketsMedNum, col, priz, wallsSumm, externalEdges);
             piketsMedNum = 0;
             piketsMedPos = V3(0, 0, 0);
             col = Color::None;
             priz = MARK_NONE;
             wallsSumm.clear();
-            adjPkets.clear();
-            adjPkets.push_back(fakePiket);
+			externalEdges.clear();
+			prevFakePiket = fakePiket;
+			prevPiket = NULL;
+			edgeColNum = 0;
+			edgeCol = Color::None;
 
             if (it == chain.end()) break;
         } else {
@@ -173,7 +203,7 @@ void Cave::processZSurveyPiketsChain(const std::list<const Piket*>& chain) {
     }                   
 }
 
-const Piket* Cave::addFakePiket(V3 pos, Color col, PiketMark priz, const std::vector<Wall>& walls, const std::vector<const Piket*>& adjPkets) {
+const Piket* Cave::addFakePiket(V3 pos, Color col, PiketMark priz, const std::vector<Wall>& walls, const std::vector<EdgeInfo>& edges) {
 
 	PiketInfo fakePiketInfo;
 	fakePiketInfo.pos = pos;
@@ -187,11 +217,16 @@ const Piket* Cave::addFakePiket(V3 pos, Color col, PiketMark priz, const std::ve
 
 	Piket* fakePiket = getPiketMut(piketId);
     fakePiket->allWalls.insert(fakePiket->allWalls.end(), walls.begin(), walls.end());
-    fakePiket->adjPikets.insert(fakePiket->adjPikets.end(), adjPkets.begin(), adjPkets.end());
 
-    for (int i = 0; i < adjPkets.size(); i++) {
-        Piket* adjPiket = getPiketMut(adjPkets[i]->id);
-        adjPiket->adjPikets.push_back(fakePiket);            
+    for (int i = 0; i < edges.size(); i++) {
+		int adjPiketId = edges[i].fromPiketId;
+        Piket* adjPiket = getPiketMut(adjPiketId);
+		adjPiket->adjPikets.push_back(fakePiket);
+		fakePiket->adjPikets.push_back(adjPiket);
+
+		if (!edges[i].col.isNone()) {
+			this->edges[make_pair(std::min(piketId, adjPiketId), std::max(piketId, adjPiketId))] = EdgeInfo(piketId, adjPiketId, edges[i].col);
+		}
     }
      
     return fakePiket;
@@ -497,6 +532,11 @@ void Cave::addVertice(const PiketInfo& piketInfo, int id) {
 	}
 }
 
+void Cave::addEdge(const EdgeInfo& info) {
+	addEdge(info.fromPiketId, info.toPiketId);
+	edges[make_pair(std::min(info.fromPiketId, info.toPiketId), std::max(info.fromPiketId, info.toPiketId))] = info;
+}
+
 void Cave::addEdge(int verticeId0, int verticeId1) {
 	if (wasInited) {
 		LOG("fail to add edge: cave already finish initialisation ");
@@ -518,6 +558,8 @@ void Cave::addWall(const Wall& wall, int linkToVerticeId, int parentPiketId) {
 		LOG("fail to add wall: cave already finish initialisation ");
 		return ;
 	}
+
+	if (parentPiketId == 0) parentPiketId = linkToVerticeId;
 
 	Piket* curPiket = getPiketMut(linkToVerticeId);
 	if (!curPiket) {
@@ -616,6 +658,8 @@ void Cave::buildCutsObject() {
 	for (; it != pikets.end(); it++) {
 		const Piket* piket = &it->second;
 		Color col = getColorForPiket(piket);
+		Color polyecol = col;
+		polyecol.a = 0.5f;
 
 		std::vector<WallProj> rotWalls = getWalls2d(piket->piketEffectivePos, piket->dirrection, piket->dirrection, piket->classifiedWalls);
 		for (int i = 0; i < ((int)rotWalls.size()) + std::min(0, -caveViewPrefs.skipNum); i++) {
@@ -627,7 +671,7 @@ void Cave::buildCutsObject() {
 			const PiketWall& niWall = piket->classifiedWalls[niWallProj.idx];			
 
 			addOutputLine(OT_WALL_CUTS, iWall.pos, niWall.pos, col);
-			addOutputPoly(OT_WALL_CUTS, piket->piketEffectivePos, iWall.pos, niWall.pos, col);
+			addOutputPoly(OT_WALL_CUTS, piket->piketEffectivePos, iWall.pos, niWall.pos, polyecol);
 		}
 	}
 }
@@ -1666,11 +1710,44 @@ WallTriangles Cave::buildWallSegmentCenterMode(const Piket* prevPiket, const Pik
     }
     
     return wallPairs;
-}
+}const Color& Cave::getColorForEdge(const Piket* from, const Piket* to) {
+	auto key = make_pair(std::min(from->id, to->id), std::max(from->id, to->id));
+	auto edgeIt = edges.find(key);
+	if (edgeIt != edges.end()) return edgeIt->second.col;
+	else return Color::None;
+}
+
+Color Cave::getColorForPiketByEdges(const Piket* piket) {
+	int num = 0;
+	Color res = Color::None;
+	for (const Piket* adjPiket : piket->adjPikets) {
+		const auto& col = getColorForEdge(piket, adjPiket);
+		if (col != Color::None) {
+			num++;
+			res += col;
+		}
+	}
+
+	for (const Piket* adjfPiket : piket->adjFakePikets) {
+		const auto& col = getColorForEdge(piket, adjfPiket);
+		if (col != Color::None) {
+			num++;
+			res += col;
+		}
+	}
+
+	res /= num;
+
+	return res;
+}
+
 Color Cave::getColorForPiket(const Piket* piket) {
     if (caveViewPrefs.wallColoringMode == WCM_ROUGE || caveViewPrefs.wallColoringMode == WCM_SMOOTH) {
         Color col = piket->getPrevailWallColor() * 0.6f;
-        col.a = 0.5;
+		if (col.r + col.g + col.b == 0) {
+			col = getColorForPiketByEdges(piket);
+		}
+        col.a = 1.0f;
         return col;
     } else if (caveViewPrefs.wallColoringMode == WCM_TIGHTNESS_SMOOTH) {
         float maxDim = piket->getMaxDimension();
@@ -1680,17 +1757,17 @@ Color Cave::getColorForPiket(const Piket* piket) {
         if (maxDim > 0) minDim = square / maxDim / (M_PI * 0.9) * 4; 
         
         static std::vector<std::pair<float, Color> > colors;
-        if (colors.empty()) {       // 100 = 1ì
-			colors.push_back(make_pair(000.0f,  Color(1, 0, 0, 1) * 1.00));
-			colors.push_back(make_pair(032.5f,  Color(1, 0, 0, 1) * 0.75));
-			colors.push_back(make_pair(075.0f,  Color(1, 1, 0, 1) * 0.6));
-			colors.push_back(make_pair(150.0f,  Color(0, 1, 0, 1) * 0.6));
-			colors.push_back(make_pair(500.0f,  Color(0, 1, 0, 1) * 0.6));
-			colors.push_back(make_pair(1100.0f, Color(0, 1, 1, 1) * 0.7));
+        if (colors.empty()) {      
+			colors.push_back(make_pair(0.000f * ptsInMeter,  Color(1,    0,   0,   1)));
+			colors.push_back(make_pair(0.325f * ptsInMeter,  Color(0.75, 0,   0,   1)));
+			colors.push_back(make_pair(0.750f * ptsInMeter,  Color(0.6,  0.6, 0,   1)));
+			colors.push_back(make_pair(1.500f * ptsInMeter,  Color(0,    0.6, 0,   1)));
+			colors.push_back(make_pair(5.000f * ptsInMeter,  Color(0,    0.6, 0,   1)));
+			colors.push_back(make_pair(11.000f * ptsInMeter, Color(0,    0.7, 0.7, 1)));
         }
         
         return getColorByRatio(colors, minDim);
-    } else {
+    } else {		
         return Color(0.5, 0.5, 0.5, 0.5);
     } 
 }
@@ -1698,12 +1775,12 @@ Color Cave::getColorForPiket(const Piket* piket) {
 Color Cave::getDepthColor(float depthRate) {
     static std::vector<std::pair<float, Color> > colors;
     if (colors.empty()) {       
-		colors.push_back(make_pair(0 / 6.0f, Color(1, 0, 0, 1) * 0.6));
-		colors.push_back(make_pair(1 / 6.0f, Color(1, 1, 0, 1) * 0.6));
-		colors.push_back(make_pair(2 / 6.0f, Color(0, 1, 0, 1) * 0.6));
-		colors.push_back(make_pair(3 / 6.0f, Color(0, 1, 1, 1) * 0.6));
-		colors.push_back(make_pair(4 / 6.0f, Color(0, 0, 1, 1) * 0.6));
-		colors.push_back(make_pair(5 / 6.0f, Color(1, 0, 1, 1) * 0.6));
+		colors.push_back(make_pair(0 / 6.0f, Color(1, 0, 0, 1 / 0.6) * 0.6));
+		colors.push_back(make_pair(1 / 6.0f, Color(1, 1, 0, 1 / 0.6) * 0.6));
+		colors.push_back(make_pair(2 / 6.0f, Color(0, 1, 0, 1 / 0.6) * 0.6));
+		colors.push_back(make_pair(3 / 6.0f, Color(0, 1, 1, 1 / 0.6) * 0.6));
+		colors.push_back(make_pair(4 / 6.0f, Color(0, 0, 1, 1 / 0.6) * 0.6));
+		colors.push_back(make_pair(5 / 6.0f, Color(1, 0, 1, 1 / 0.6) * 0.6));
 	}
 
     return getColorByRatio(colors, depthRate);
