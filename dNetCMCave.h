@@ -14,7 +14,7 @@ namespace DotNetCaveModel{
 
 	public enum class ColoringMode
 	{
-		CM_EXTERNAL,
+		CM_CAVEBRANCH,
 		CM_TIGHTNESS_SMOOTH,
 		CM_DEPTH_SMOOTH
 	};
@@ -91,12 +91,13 @@ namespace DotNetCaveModel{
 		~DNetCMCave();
 		
 		bool setMode(RenderMode mode);
+		bool setColoringMode(ColoringMode mode, bool grayscale);
 		bool setColoringMode(ColoringMode mode);
 		
 		void addVertice(DNPiketInfo^ piketInfo, int equatesVerticeId);
 		void addVertice(DNPiketInfo^ piketInfo);
 		void addEdge(int verticeId0, int verticeId1);
-		void addEdge(int verticeId0, int verticeId1, float r, float g, float b);
+		void addEdge(int verticeId0, int verticeId1, bool zSurvey, float r, float g, float b);
 		void addWall(DNWall^ wall, int linkToVerticeId, int parentPiketId);
 		void addWall(float x, float y, float z, int linkToVerticeId, int parentPiketId);
 		void addWall(DNWall^ wall, int linkToVerticeId) { addWall(wall, linkToVerticeId, 0); };

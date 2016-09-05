@@ -14,7 +14,7 @@ typedef std::vector<V3> vectorV3;
 
 class Cave {
 public:
-	Cave(float pointsInMeter = 100.0f);
+	Cave();
 	~Cave();
     bool setCaveViewPrefs(const CaveViewPrefs& prefs);
 
@@ -125,12 +125,18 @@ protected:
     
     static Color getColorByRatio(const std::vector<std::pair<float, Color> >& colors, float rate);
 
+	const EdgeInfo& getEdgeInfo(const Piket* from, const Piket* to) const { return getEdgeInfo(from->id, to->id); }
+	const EdgeInfo& getEdgeInfo(int from, int to) const;
+
+	std::vector<const Piket*> getZSurveyEdges(const Piket* from) const;
+
 	// output:
 	void resetOutput(OuputType type);
 	void addOutputPoly(OuputType type, V3 a, V3 b, V3 c, V3 an, V3 bn, V3 cn, const Color& ca, const Color& cb, const Color& cc);
 	void addOutputPoly(OuputType type, V3 a, V3 b, V3 c, const Color& col);
 	void addOutputLine(OuputType type, V3 a, V3 b, const Color& c);
 	void addOutputLine(OuputType type, V3 a, V3 b, const Color& ca, const Color& cb);
+	
 
 protected: // неиспольземое
 //	std::vector<V3> calcCube(int i);
@@ -161,9 +167,7 @@ protected:
 	std::tr1::unordered_map<OuputType, std::vector<OutputPoly> > outputPoly;
 	std::tr1::unordered_map<OuputType, std::vector<OutputLine> > outputLines;
 	std::tr1::unordered_map<OuputType, bool> outputLayers;
-
-
-	float ptsInMeter{ 0.0 };
+	float colourMult;
 };
 
 }

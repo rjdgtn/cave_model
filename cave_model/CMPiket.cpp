@@ -52,7 +52,7 @@ void Piket::addW3D(long long parentPiket, const Wall w3d) {
 void Piket::preProcessWalls(const CaveViewPrefs& caveViewPrefs) {
     classifyWalls();
     recalcPosCenterDirrection();
-    processPiketPosAsWall();
+    //processPiketPosAsWall();
 //    updateEffectivePos();
 //    updateDirrection();
 //    updateWallsCenter();
@@ -76,7 +76,7 @@ void Piket::updateEffectivePos() {
         center /= classifiedWalls.size();
     }
     // смещаем пикет немного в сторону чтобы не было стен прямо на пикете, откуда были бы проблемы с углами
-    piketEffectivePos = pos + (center - pos).normalisedCopy() * 1.0f;
+    piketEffectivePos = pos + (center - pos).normalisedCopy() * 0.01f * PointsInMeter;
 }
 
 void Piket::updateWallsCenter() {
@@ -140,7 +140,7 @@ void Piket::processPiketPosAsWall() {
     std::vector<WallProj> rotWalls = getWalls2d(wallsCenter, dirrection, dirrection, classifiedWalls);
 
     for (int i = 0; i < classifiedWalls.size(); i++) {
-        if (classifiedWalls[i].pos.distance(pos) < 1) {
+        if (classifiedWalls[i].pos.distance(pos) < 0.001 * PointsInMeter) {
             return;
         }
     }
@@ -161,10 +161,10 @@ void Piket::processPiketPosAsWall() {
     polygon<float, 2> wallsPolygon = make_polygon(wallsPolygon2d);
 
 
-    if (!point_in_polygon(rotPiketProjPos, wallsPolygon)) {
-        classifiedWalls.push_back(PiketWall(pos));
-        recalcPosCenterDirrection();
-    }
+//     if (!point_in_polygon(rotPiketProjPos, wallsPolygon)) {
+//         classifiedWalls.push_back(PiketWall(pos));
+//         recalcPosCenterDirrection();
+//     }
 }
 
 void Piket::propagateWalls(WallsPropagateMode propMode, WallsBlowMode blowMode) {

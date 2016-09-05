@@ -235,8 +235,8 @@ bool isQuadrangleATriangulationIsConvexRalativePoint(V3 a0, V3 b0, V3 a1, V3 b1,
 }
 
 bool isQuadrangleATriangulationIsConvexClockwise(V3 dirrection, V3 a_1, V3 b_1, V3 a0, V3 b0, V3 a1, V3 b1) {
-    if (a0.distance(a1) < 1) return true; // if a0 equadls a1 select a
-    if (b0.distance(b1) < 1) return false; // if b0 equadls b1 select b 
+    if (a0.distance(a1) < 0.01 * PointsInMeter) return true; // if a0 equadls a1 select a
+    if (b0.distance(b1) < 0.01 * PointsInMeter) return false; // if b0 equadls b1 select b 
                                                     
 //    V3 aNormal = (a1-a0).crossProduct(dirrection).normalisedCopy();     
 //    V3 bNormal = (-dirrection).crossProduct(b1-b0).normalisedCopy();
@@ -265,8 +265,8 @@ bool isQuadrangleATriangulationIsConvexClockwise(V3 dirrection, V3 a_1, V3 b_1, 
 }
 
 bool isQuadrangleATriangulationIsConvexClockwise(V3 dirrection, V3 a0, V3 b0, V3 a1, V3 b1) {
-    if (a0.distance(a1) < 1) return true; // if a0 equadls a1 select a
-    if (b0.distance(b1) < 1) return false; // if b0 equadls b1 select b
+    if (a0.distance(a1) < 0.01 * PointsInMeter) return true; // if a0 equadls a1 select a
+    if (b0.distance(b1) < 0.01 * PointsInMeter) return false; // if b0 equadls b1 select b
     
     V3 aNormal = (a1-a0).crossProduct(dirrection).normalisedCopy();     
     V3 bNormal = (-dirrection).crossProduct(b1-b0).normalisedCopy();   

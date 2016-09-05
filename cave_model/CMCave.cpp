@@ -22,10 +22,10 @@ using namespace tr1;
 using namespace Ogre;
 using namespace wykobi;
 
-Cave::Cave(float pointsInMeter):
+Cave::Cave():
 debugTriangulationAlgo(false),
 wasInited(false),
-ptsInMeter(pointsInMeter) {
+colourMult(1.0f) {
 
 }
 
@@ -64,6 +64,9 @@ bool Cave::setCaveViewPrefs(const CaveViewPrefs& prefs) {
     if (caveViewPrefs != prefs) {
 		caveViewPrefs = prefs;
 
+		if (caveViewPrefs.darkMode) colourMult = 0.6f;
+		else colourMult = 1.0f;
+
 		resetOutput(OT_DEBUG);  
 		resetOutput(OT_DEBUG2);
 
@@ -92,9 +95,10 @@ void Cave::buildFakeZSurveyPikets() {
     std::tr1::unordered_map<int, Piket>::iterator pikiIt;
     for (pikiIt = pikets.begin(); pikiIt != pikets.end(); pikiIt++) {
 		Piket* curPiket = &pikiIt->second;
-		if (curPiket->hasPriz(MARK_Z_SURVEY) && processedPikets.count(curPiket) == 0) {
+		vector<const Piket*> zEdges = getZSurveyEdges(curPiket);
+		if (!zEdges.empty() && processedPikets.count(curPiket) == 0) {
             // cчитаем количество соседних пикетов зигзаг-съемки
-            int numAdjZSurvPikets = (int)curPiket->getAdjPiketsWithPriz(MARK_Z_SURVEY).size();
+            int numAdjZSurvPikets = zEdges.size();
 			if (numAdjZSurvPikets == 1) { // если это крайний пикет съемки
 				CMLog a;
                 LOG("start process zig-zag survey");
@@ -105,10 +109,11 @@ void Cave::buildFakeZSurveyPikets() {
 				LOG("   add link " << curPiket->id << " label \"" << curPiket->getLabel() << "\"");
                 bool endReached = false;
                 do { // строим цепочку
-                    endReached = true;
-                    for (int i = 0; i < chainPiket->adjPikets.size(); i++) {
-                        const Piket* adjPiket = chainPiket->adjPikets[i];
-                        if (adjPiket && adjPiket->hasPriz(MARK_Z_SURVEY) && processedPikets.count(adjPiket) == 0) {
+					endReached = true;
+					vector<const Piket*> zEdges = getZSurveyEdges(chainPiket);
+                    for (int i = 0; i < zEdges.size(); i++) {
+						const Piket* adjPiket = zEdges[i];
+                        if (adjPiket && processedPikets.count(adjPiket) == 0) {
                             processedPikets.insert(adjPiket);
                             piketsChain.push_back(adjPiket);
                             chainPiket = adjPiket;  
@@ -1356,9 +1361,9 @@ std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(c
             selctA = false;
         } else if (bchanged == b.size()) { 
             selctA = true;
-        } else if (cana.length() < 1) {
+        } else if (cana.length() < 0.01f * PointsInMeter) {
             selctA = true;
-        } else if (cbnb.length() < 1) {
+        } else if (cbnb.length() < 0.01f * PointsInMeter) {
             selctA = false;
         } else {
             selctA = ((cana.crossProduct(cbnb) > 0) == clockwise); 
@@ -1743,7 +1748,7 @@ Color Cave::getColorForPiketByEdges(const Piket* piket) {
 
 Color Cave::getColorForPiket(const Piket* piket) {
     if (caveViewPrefs.wallColoringMode == WCM_ROUGE || caveViewPrefs.wallColoringMode == WCM_SMOOTH) {
-        Color col = piket->getPrevailWallColor() * 0.6f;
+        Color col = piket->getPrevailWallColor() * colourMult;
 		if (col.r + col.g + col.b == 0) {
 			col = getColorForPiketByEdges(piket);
 		}
@@ -1758,15 +1763,27 @@ Color Cave::getColorForPiket(const Piket* piket) {
         
         static std::vector<std::pair<float, Color> > colors;
         if (colors.empty()) {      
-			colors.push_back(make_pair(0.000f * ptsInMeter,  Color(1,    0,   0,   1)));
-			colors.push_back(make_pair(0.325f * ptsInMeter,  Color(0.75, 0,   0,   1)));
-			colors.push_back(make_pair(0.750f * ptsInMeter,  Color(0.6,  0.6, 0,   1)));
-			colors.push_back(make_pair(1.500f * ptsInMeter,  Color(0,    0.6, 0,   1)));
-			colors.push_back(make_pair(5.000f * ptsInMeter,  Color(0,    0.6, 0,   1)));
-			colors.push_back(make_pair(11.000f * ptsInMeter, Color(0,    0.7, 0.7, 1)));
+			colors.push_back(make_pair(0.000f * PointsInMeter,  Color(1, 0, 0, 1)));
+			colors.push_back(make_pair(0.325f * PointsInMeter,  Color(1, 0, 0, 1) * 1.0));
+			colors.push_back(make_pair(0.750f * PointsInMeter,  Color(1, 1, 0, 1) * 0.6/0.7));
+			colors.push_back(make_pair(1.500f * PointsInMeter,  Color(0, 1, 0, 1) * 0.6 / 0.7));
+			colors.push_back(make_pair(5.000f * PointsInMeter,  Color(0, 1, 0, 1) * 0.6 / 0.7));
+			colors.push_back(make_pair(11.000f * PointsInMeter, Color(0, 1, 1, 1) * 1.0));
         }
+
+		static std::vector<std::pair<float, Color> > grayColors;
+		if (grayColors.empty()) {
+			grayColors.push_back(make_pair(0.000f * PointsInMeter, Color(0.1, 0.1, 0.1, 1)));
+			grayColors.push_back(make_pair(0.325f * PointsInMeter, Color(0.1, 0.1, 0.1, 1)));
+			grayColors.push_back(make_pair(0.750f * PointsInMeter, Color(0.25, 0.25, 0.25, 1)));
+			grayColors.push_back(make_pair(1.500f * PointsInMeter, Color(0.5, 0.5, 0.5, 1)));
+			grayColors.push_back(make_pair(5.000f * PointsInMeter, Color(0.8, 0.8, 0.8, 1)));
+			grayColors.push_back(make_pair(11.00f * PointsInMeter, Color(0.9, 0.9, 0.9, 1)));
+		}
         
-        return getColorByRatio(colors, minDim);
+        Color col = getColorByRatio(!caveViewPrefs.grayscale ? colors : grayColors, minDim) * colourMult;
+		col.a = 1.0f;
+		return col;
     } else {		
         return Color(0.5, 0.5, 0.5, 0.5);
     } 
@@ -1775,15 +1792,23 @@ Color Cave::getColorForPiket(const Piket* piket) {
 Color Cave::getDepthColor(float depthRate) {
     static std::vector<std::pair<float, Color> > colors;
     if (colors.empty()) {       
-		colors.push_back(make_pair(0 / 6.0f, Color(1, 0, 0, 1 / 0.6) * 0.6));
-		colors.push_back(make_pair(1 / 6.0f, Color(1, 1, 0, 1 / 0.6) * 0.6));
-		colors.push_back(make_pair(2 / 6.0f, Color(0, 1, 0, 1 / 0.6) * 0.6));
-		colors.push_back(make_pair(3 / 6.0f, Color(0, 1, 1, 1 / 0.6) * 0.6));
-		colors.push_back(make_pair(4 / 6.0f, Color(0, 0, 1, 1 / 0.6) * 0.6));
-		colors.push_back(make_pair(5 / 6.0f, Color(1, 0, 1, 1 / 0.6) * 0.6));
+		colors.push_back(make_pair(0 / 6.0f, Color(1, 0, 0, 1)));
+		colors.push_back(make_pair(1 / 6.0f, Color(1, 1, 0, 1)));
+		colors.push_back(make_pair(2 / 6.0f, Color(0, 1, 0, 1)));
+		colors.push_back(make_pair(3 / 6.0f, Color(0, 1, 1, 1)));
+		colors.push_back(make_pair(4 / 6.0f, Color(0, 0, 1, 1)));
+		colors.push_back(make_pair(5 / 6.0f, Color(1, 0, 1, 1)));
 	}
 
-    return getColorByRatio(colors, depthRate);
+	static std::vector<std::pair<float, Color> > grayColors;
+	if (grayColors.empty()) {
+		grayColors.push_back(make_pair(0 / 6.0f, Color(0.1, 0.1, 0.1, 1)));
+		grayColors.push_back(make_pair(5 / 6.0f, Color(0.9, 0.9, 0.9, 1)));
+	}
+
+    Color col = getColorByRatio(!caveViewPrefs.grayscale ? colors : grayColors, depthRate) * colourMult;;
+	col.a = 1.0f;
+	return col;
 }
 
 Color Cave::getColorByRatio(const std::vector<std::pair<float, Color> >& colors, float rate) {
@@ -2084,6 +2109,24 @@ void Cave::addOutputLine(OuputType type, V3 a, V3 b, const Color& ca, const Colo
 
 void Cave::addOutputLine(OuputType type, V3 a, V3 b, const Color& c) {
 	addOutputLine(type, a, b, c, c);
+}
+
+const CM::EdgeInfo& Cave::getEdgeInfo(int from, int to) const {
+	static EdgeInfo nullEdge;
+	auto key = make_pair(std::min(from, to), std::max(from, to));
+	auto edgeIt = edges.find(key);
+	if (edgeIt != edges.end()) return edgeIt->second;
+	else return nullEdge;	
+}
+
+std::vector<const Piket*> Cave::getZSurveyEdges(const Piket* from) const
+{
+	std::vector<const Piket*> res;
+	for (int i = 0; i < from->adjPikets.size(); i++) {
+		const Piket* piket = from->adjPikets[i];
+		if (piket && (piket->hasPriz(MARK_Z_SURVEY) || getEdgeInfo(from, piket).zsurvey)) res.push_back(piket);
+	}
+	return res;
 }
 
 void Cave::resetOutput(OuputType type) {

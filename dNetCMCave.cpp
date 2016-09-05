@@ -14,7 +14,9 @@ namespace DotNetCaveModel {
 	using namespace System::Collections::Generic;
 
 	DNetCMCave::DNetCMCave() {
-		cmCave = new Cave(1.0f);
+		CM::PointsInMeter = 1.0f;
+
+		cmCave = new Cave();
 		caveViewPrefs = new CaveViewPrefs();
 	}
 
@@ -47,11 +49,15 @@ namespace DotNetCaveModel {
 		return cmCave->setCaveViewPrefs(*caveViewPrefs);
 	}
 
-	bool DNetCMCave::setColoringMode(ColoringMode mode)
+	bool DNetCMCave::setColoringMode(ColoringMode mode) {
+		return setColoringMode(mode, false);
+	}
+
+	bool DNetCMCave::setColoringMode(ColoringMode mode, bool grayscale)
 	{
 		switch (mode)
 		{
-		case DotNetCaveModel::ColoringMode::CM_EXTERNAL:
+		case DotNetCaveModel::ColoringMode::CM_CAVEBRANCH:
 			caveViewPrefs->wallColoringMode = WCM_SMOOTH;
 			break;
 		case DotNetCaveModel::ColoringMode::CM_TIGHTNESS_SMOOTH:
@@ -61,6 +67,8 @@ namespace DotNetCaveModel {
 			caveViewPrefs->wallColoringMode = WCM_DEPTH_SMOOTH;
 			break;
 		}
+
+		caveViewPrefs->grayscale = grayscale;
 
 		return cmCave->setCaveViewPrefs(*caveViewPrefs);
 	}
@@ -127,10 +135,11 @@ namespace DotNetCaveModel {
 		cmCave->addEdge(verticeId0, verticeId1);
 	}
 
-	void DNetCMCave::addEdge(int verticeId0, int verticeId1, float r, float g, float b)
+	void DNetCMCave::addEdge(int verticeId0, int verticeId1, bool zSurvey, float r, float g, float b)
 	{
 		EdgeInfo info(verticeId0, verticeId1);
 		info.col = Color(r, g, b, 1.0f) ;
+		info.zsurvey = zSurvey;
 		cmCave->addEdge(info);
 	}
 

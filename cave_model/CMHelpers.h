@@ -102,7 +102,7 @@ struct Vertice {
     x(0), y(0), z(0) { }
 
     Vertice(const V3& vec):
-    x((int)(vec.x / 2.0f)), y((int)(vec.y / 2.0f)), z((int)(vec.z / 2.0f)) { }
+    x((int)(vec.x * 200.0f / PointsInMeter)), y((int)(vec.y * 200.0f / PointsInMeter)), z((int)(vec.z * 200.0f / PointsInMeter)) { }
 
     bool operator< (const Vertice& vtc) const {
         return x < vtc.x || ( x == vtc.x && (y < vtc.y || y == vtc.y && z < vtc.z)); 

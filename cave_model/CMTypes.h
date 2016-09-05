@@ -5,6 +5,8 @@
 
 namespace CM {
 
+extern float PointsInMeter;
+
 typedef Ogre::Vector3 V3;
 typedef Ogre::Vector2 V2;
 
@@ -130,6 +132,8 @@ struct CaveViewPrefs {
 	, showBox(false)
 	, showSections(false)
     , skipNum(0)
+	, darkMode(false)
+	, grayscale(false)
     { }
 
     bool operator== (const CaveViewPrefs& o2) {
@@ -153,7 +157,10 @@ struct CaveViewPrefs {
 		&& showWallLines == o2.showWallLines
 		&& showBox == o2.showBox
 		&& fillRate == o2.fillRate
-        && skipNum == o2.skipNum;
+		&& skipNum == o2.skipNum
+		&& darkMode == o2.darkMode
+		&& grayscale == o2.grayscale;
+		
     }
 
     bool operator!= (const CaveViewPrefs& o2) { return !(*this == o2); };
@@ -179,6 +186,8 @@ struct CaveViewPrefs {
 	float fillRate; // 0..1
 	bool showDebug;
     int skipNum;
+	bool darkMode;
+	bool grayscale;
 };
 
 struct Color {
@@ -293,11 +302,14 @@ struct PiketInfo {
 };
 
 struct EdgeInfo {
-	EdgeInfo() : fromPiketId(0), toPiketId(0) { }
+	EdgeInfo() : fromPiketId(0), toPiketId(0), zsurvey(0) { }
 	EdgeInfo(int from, int to, const Color& col = Color::None) : fromPiketId(from), toPiketId(to), col(col) { }
+	bool isEmpty() const { return fromPiketId == 0 && toPiketId == 0; }
+
 	int fromPiketId;
 	int toPiketId;
 	Color col;
+	bool zsurvey;
 };
 
 inline bool operator<(const std::pair<int, int>& p1, const std::pair<int, int>& p2) {

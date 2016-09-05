@@ -29,7 +29,9 @@ THE SOFTWARE
 #include <assert.h>
 #include <algorithm>
 
-#define FORCEINLINE inline
+# ifndef FORCEINLINE
+	#define FORCEINLINE inline
+#endif
 #define _OgreExport
 
 #define MEMCATEGORY_GENERAL 0

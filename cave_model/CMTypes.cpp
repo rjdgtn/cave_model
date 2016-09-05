@@ -1,5 +1,9 @@
 #include "CMTypes.h"
 
+namespace CM {
+	float PointsInMeter = 100.0f;
+};
+
 using namespace CM;
 
 Color Color::Red(1, 0, 0);
