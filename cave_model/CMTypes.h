@@ -106,6 +106,7 @@ enum RenderSimpleMode {
     SM_ROUGH_WALLS, // новый рендерер, без постобработки полигонов
 	SM_SMOOTH_WALLS, // новый рендерер, "мягкое" освещение, "деформация" полигонов
 	SM_SECTIONS_WALLS, // новый рендерер, рисуются сечени, стены отображаются проволокой
+	SM_OUTLINE, // walls projection to camera
 	SM_NUM
 };
 
@@ -130,6 +131,7 @@ struct CaveViewPrefs {
 	, showDebug(false)
 	, showWallLines(false)
 	, showBox(false)
+	, lookDirrection(0, 0, 0)
 	, showSections(false)
     , skipNum(0)
 	, darkMode(false)
@@ -157,6 +159,8 @@ struct CaveViewPrefs {
 		&& showWallLines == o2.showWallLines
 		&& showBox == o2.showBox
 		&& fillRate == o2.fillRate
+		&& lookDirrection == o2.lookDirrection
+		&& showOutline == o2.showOutline
 		&& skipNum == o2.skipNum
 		&& darkMode == o2.darkMode
 		&& grayscale == o2.grayscale;
@@ -183,6 +187,8 @@ struct CaveViewPrefs {
 	bool showSections;
 	bool showWallLines;
 	bool showBox;
+	V3 lookDirrection;
+	bool showOutline;
 	float fillRate; // 0..1
 	bool showDebug;
     int skipNum;
@@ -253,7 +259,8 @@ enum OuputType {
 	OT_WALL_CUTS,
 	OT_DEBUG,
     OT_DEBUG2,
-    OT_BOX,
+	OT_BOX,
+	OT_OUTLINE,
 };
 
 struct OutputPoly {
@@ -316,5 +323,7 @@ inline bool operator<(const std::pair<int, int>& p1, const std::pair<int, int>& 
 	if (p1.first != p2.first) return p1.first < p2.first;
 	else return p1.second < p2.second;
 }
+
+
 
 }

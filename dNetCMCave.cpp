@@ -44,6 +44,9 @@ namespace DotNetCaveModel {
 		case DotNetCaveModel::RenderMode::SM_CUTS:
 			updateForSectionsWallsMode(caveViewPrefs);
 			break;
+		case DotNetCaveModel::RenderMode::SM_OUTLINE:
+			updateForOutlineMode(caveViewPrefs);
+			break;
 		}
 
 		return cmCave->setCaveViewPrefs(*caveViewPrefs);
@@ -82,6 +85,7 @@ namespace DotNetCaveModel {
 		caveViewPrefs->wallsTrianglesBlowStrength = CM::WTBS_LOW;
 		caveViewPrefs->showSections = false;
 		caveViewPrefs->showWallLines = false;
+		caveViewPrefs->showOutline = false;
 	}
 
 	void DNetCMCave::updateForSmoothWallsMode(CaveViewPrefs* caveViewPrefs) {
@@ -93,6 +97,7 @@ namespace DotNetCaveModel {
 		caveViewPrefs->wallsTrianglesBlowStrength = CM::WTBS_LOW;
 		caveViewPrefs->showSections = false;
 		caveViewPrefs->showWallLines = false;
+		caveViewPrefs->showOutline = false;
 	}
 
 	void DNetCMCave::updateForSectionsWallsMode(CaveViewPrefs* caveViewPrefs) {
@@ -104,8 +109,21 @@ namespace DotNetCaveModel {
 		caveViewPrefs->wallsTrianglesBlowStrength = CM::WTBS_LOW;
 		caveViewPrefs->showSections = true;
 		caveViewPrefs->showWallLines = true;
+		caveViewPrefs->showOutline = false;
 	}
 
+	void DNetCMCave::updateForOutlineMode(CaveViewPrefs* caveViewPrefs) {
+		caveViewPrefs->wallsPropagateMode = CM::WPM_NONE;
+		caveViewPrefs->wallsShadowMode = CM::WSM_ROUGH;
+		caveViewPrefs->wallsBlowMode = CM::WBM_NONE;
+		caveViewPrefs->wallsSurfaceMode = CM::WSFM_NONE;
+		caveViewPrefs->wallsTrianglesBlowMode = CM::WTBM_NONE;
+		caveViewPrefs->wallsTrianglesBlowStrength = CM::WTBS_LOW;
+		caveViewPrefs->showSections = false;
+		caveViewPrefs->showWallLines = true;
+		caveViewPrefs->showOutline = true;
+	}
+	
 	CM::PiketInfo DNPiketInfo::toPiketMark()
 	{
 		PiketInfo res;

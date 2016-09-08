@@ -25,7 +25,8 @@ using namespace wykobi;
 Cave::Cave():
 debugTriangulationAlgo(false),
 wasInited(false),
-colourMult(1.0f) {
+colourMult(1.0f),
+prebuildInvalidated(true) {
 
 }
 
@@ -60,6 +61,9 @@ bool Cave::setCaveViewPrefs(const CaveViewPrefs& prefs) {
 	caveViewPrefs.showThread = prefs.showThread ;
     caveViewPrefs.showWallLines = prefs.showWallLines ;
     caveViewPrefs.showBox = prefs.showBox ;
+	bool lookDirrectionChanged = (caveViewPrefs.lookDirrection != prefs.lookDirrection);
+	caveViewPrefs.lookDirrection = prefs.lookDirrection;
+	caveViewPrefs.showOutline = prefs.showOutline;
 
     if (caveViewPrefs != prefs) {
 		caveViewPrefs = prefs;
@@ -67,15 +71,19 @@ bool Cave::setCaveViewPrefs(const CaveViewPrefs& prefs) {
 		if (caveViewPrefs.darkMode) colourMult = 0.6f;
 		else colourMult = 1.0f;
 
+		invalidatePrebuild();
+
 		resetOutput(OT_DEBUG);  
 		resetOutput(OT_DEBUG2);
 
 		buildWallsObject();
 		buildCutsObject();
 		updateWallsSurrfaceMode();
+		buildOutline();
 
         return true;
     } else {
+		if (lookDirrectionChanged) buildOutline();
         updateWallsSurrfaceMode();
 		return false;
     }
@@ -88,6 +96,7 @@ void Cave::updateWallsSurrfaceMode() {
 	outputLayers[OT_WALL] = caveViewPrefs.wallsSurfaceMode == WSFM_SURF;
 	outputLayers[OT_WALL_CUTS] = caveViewPrefs.showSections;
 	outputLayers[OT_BOX] = caveViewPrefs.showBox;
+	outputLayers[OT_OUTLINE] = caveViewPrefs.showOutline;
 }
 
 void Cave::buildFakeZSurveyPikets() {
@@ -656,6 +665,7 @@ void Cave::buildBoxObject() {
 }
 
 void Cave::buildCutsObject() {
+	prebuildPikets();
 
 	resetOutput(OT_WALL_CUTS);
 
@@ -696,21 +706,98 @@ void Cave::buildThreadObject() {
 	}
 }
 
+void Cave::prebuildPikets() {
+	if (prebuildInvalidated) {
+		std::tr1::unordered_map<int, Piket>::iterator pikiIt;
+		for (pikiIt = pikets.begin(); pikiIt != pikets.end(); pikiIt++) {
+			pikiIt->second.preProcessWalls(caveViewPrefs);
+		}
+
+		genPiketsFakeWalls(caveViewPrefs.generateWallsForNoWallsPiketsMode);
+	}
+}
+
+void Cave::buildOutlineBezier() {
+	prebuildPikets();
+	if (outineCache.empty()) {
+		outineCache.reserve(pikets.size() * 2 * 1.05);
+
+		unordered_map<const Piket*, std::vector<const Piket*> > buildWalls;
+		std::tr1::unordered_map<int, Piket>::const_iterator it = pikets.begin();
+		for (; it != pikets.end(); it++) {
+			// if (segmentDraw > 0) break;
+			int id = it->first;
+			const Piket* curPiket = &it->second;
+			if (curPiket->isInactive()) continue;
+			int i = 0;
+			float adjPiketsNum = curPiket->adjPikets.size();
+			float totalAdjPikets = curPiket->adjPikets.size() + curPiket->adjFakePikets.size();
+			if (totalAdjPikets != adjPiketsNum) {
+				int i = 0;
+			}
+			for (int j = 0; j < totalAdjPikets; j++) {
+				const Piket* nextPiket = NULL;
+				if (j < adjPiketsNum) nextPiket = curPiket->adjPikets.at(j);
+				else nextPiket = curPiket->adjFakePikets.at(j - adjPiketsNum);
+
+				if (nextPiket->isInactive()) continue;
+
+				const Piket* minPiket = std::min(curPiket, nextPiket);
+				const Piket* maxPiket = std::max(curPiket, nextPiket);
+
+				std::vector<const Piket*>& buildOutlineForCurPiket = buildWalls[minPiket];
+				if (find(buildOutlineForCurPiket.begin(), buildOutlineForCurPiket.end(), maxPiket) != buildOutlineForCurPiket.end()) {
+					continue;
+				}
+				else {
+					buildOutlineForCurPiket.push_back(maxPiket);
+				}
+
+				bool findAtadjPikets = find(nextPiket->adjPikets.begin(), nextPiket->adjPikets.end(), curPiket) != nextPiket->adjPikets.end();
+				bool findAtFakeadjPikets = find(nextPiket->adjFakePikets.begin(), nextPiket->adjFakePikets.end(), curPiket) != nextPiket->adjFakePikets.end();
+				AssertReturn(findAtFakeadjPikets || findAtadjPikets, continue);
+
+				if (!curPiket->classifiedWalls.empty() && !nextPiket->classifiedWalls.empty()) {
+					for (int widx = 0; widx < curPiket->classifiedWalls.size(); widx++) {
+						debugDraw(curPiket->piketEffectivePos, curPiket->classifiedWalls[widx].pos, Color::Red);
+					}
+					for (int widx = 0; widx < nextPiket->classifiedWalls.size(); widx++) {
+						debugDraw(nextPiket->piketEffectivePos, nextPiket->classifiedWalls[widx].pos, Color::Blue);
+					}
+				}
+
+				buildOutlineSegmenteBezier(nextPiket, curPiket);
+			}
+		}
+
+	}
+}
+
+void Cave::buildOutline() {
+	LOG("Cave builld outline object started");
+
+	resetOutput(OT_OUTLINE);
+
+	buildOutlineBezier();
+
+	for (int i = 0; i < outineCache.size(); i++) {
+		const LineBesier3& line = outineCache[i];
+		const Piket* aPiket = getPiket(line.aid);
+		const Piket* bPiket = getPiket(line.bid);
+
+		AssertReturn(aPiket, continue);
+		AssertReturn(bPiket, continue);
+
+		Color aCol = getColorForPiket(aPiket);
+		Color bCol = getColorForPiket(bPiket);
+		addOutputLine(OT_OUTLINE, line.a, line.b, aCol, bCol);
+	}
+}
 
 void Cave::buildWallsObject() {
     LOG("Cave builld walls object started");
+	prebuildPikets();
     
-    std::tr1::unordered_map<int, Piket>::iterator pikiIt;
-    for (pikiIt = pikets.begin(); pikiIt != pikets.end(); pikiIt++) {
-        pikiIt->second.preProcessWalls(caveViewPrefs);
-    }
-
-    genPiketsFakeWalls(caveViewPrefs.generateWallsForNoWallsPiketsMode);
-    
-//    debug2->clear();
-//	debug2->begin("BaseWhiteNoLighting", RenderOperation::OT_LINE_LIST);
-
-
     std::vector<WallTriangle> wallTriangles;
     unordered_map<const PiketWall*, WallNormal> wallNormals;
     
@@ -1416,6 +1503,87 @@ std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(c
     return  globalOrder;    
 }
 
+void Cave::buildOutlineSegmenteBezier(const Piket* prevPiket, const Piket* curPiket) {
+	AssertReturn(prevPiket && curPiket, return);
+	if (!prevPiket->classifiedWalls.empty() && !curPiket->classifiedWalls.empty()) {
+		Color prevCol = getColorForPiket(prevPiket);
+		Color curCol = caveViewPrefs.wallColoringMode == WCM_ROUGE ? prevCol : getColorForPiket(curPiket);
+		
+		V3 curPikPos = curPiket->piketEffectivePos;
+		V3 prevPikPos = prevPiket->piketEffectivePos;
+		V3 roughDirrection = curPiket->wallsCenter - prevPiket->wallsCenter;
+
+		V3 prevPiketDirrection = prevPiket->dirrection;
+		if (prevPiketDirrection.angleBetween(roughDirrection) > Radian(M_PI_2)) {
+			prevPiketDirrection = -prevPiketDirrection;
+		}
+		V3 curPiketDirrection = curPiket->dirrection;
+		if (curPiketDirrection.angleBetween(roughDirrection) > Radian(M_PI_2)) {
+			curPiketDirrection = -curPiketDirrection;
+		}
+
+		V3 dirrection = (prevPiketDirrection + curPiketDirrection) / 2;
+
+		LeftRight prevPiketLeftRight = getCornerCutPoints(prevPiket, dirrection);
+		LeftRight curPiketLeftRight = getCornerCutPoints(curPiket, dirrection);
+
+		V3 controlVecA = prevPiketDirrection.normalisedCopy();
+		V3 controlVecB = -curPiketDirrection.normalisedCopy();
+
+		LineBesier3 leftCurve;
+		leftCurve.aid = prevPiket->id;
+		leftCurve.bid = curPiket->id;
+		leftCurve.a = prevPiketLeftRight.left;
+		leftCurve.b = curPiketLeftRight.left;
+		leftCurve.ac = leftCurve.a + controlVecA * leftCurve.b.distance(leftCurve.a) * 0.25;
+		leftCurve.bc = leftCurve.b + controlVecB * leftCurve.b.distance(leftCurve.a) * 0.25;
+
+		LineBesier3 rightCurve;
+		rightCurve.aid = prevPiket->id;
+		rightCurve.bid = curPiket->id;
+		rightCurve.a = prevPiketLeftRight.right;
+		rightCurve.b = curPiketLeftRight.right;
+		rightCurve.ac = rightCurve.a + controlVecA * rightCurve.b.distance(rightCurve.a) * 0.25;
+		rightCurve.bc = rightCurve.b + controlVecB * rightCurve.b.distance(rightCurve.a) * 0.25;
+
+		outineCache.push_back(leftCurve);
+		outineCache.push_back(rightCurve);
+	}
+}
+
+Cave::LeftRight Cave::getCornerCutPoints(const Piket* piket, V3 orientation) {
+	LeftRight lr;
+	lr.left = V3(0, 0, 0);
+	lr.right = V3(0, 0, 0);
+	AssertReturn(piket, return lr);
+	AssertReturn(caveViewPrefs.lookDirrection != V3::ZERO, return lr);
+
+	V3 piketPos = piket->piketEffectivePos;
+
+	V3 prevPiketDirrection = piket->dirrection;
+	if (prevPiketDirrection.angleBetween(orientation) > Radian(M_PI_2)) {
+		prevPiketDirrection = -prevPiketDirrection;
+	}
+	std::vector<WallProj> wallsOrder = getWalls2d(piketPos, prevPiketDirrection, prevPiketDirrection, piket->classifiedWalls);
+
+	V3 axis = caveViewPrefs.lookDirrection.crossProduct(prevPiketDirrection).normalisedCopy();
+	float min = FLT_MAX;
+	float max = -FLT_MAX;
+	for (int i = 0; i < wallsOrder.size(); i++) {
+		const PiketWall pwall = piket->classifiedWalls.at(wallsOrder[i].idx);
+		float val = projectPointToVector(axis, pwall.pos);
+		if (val >= max) {
+			max = val;
+			lr.right = pwall.pos;
+		}
+		if (val < min) {
+			min = val;
+			lr.left = pwall.pos;
+		}
+	}
+	return lr;
+}
+
 WallTriangles Cave::buildWallSegmentConvexQuadMode(const Piket* prevPiket, const Piket* curPiket) {
     WallTriangles wallPairs;
     AssertReturn(prevPiket && curPiket, return wallPairs);
@@ -1424,10 +1592,10 @@ WallTriangles Cave::buildWallSegmentConvexQuadMode(const Piket* prevPiket, const
         Color prevCol = getColorForPiket(prevPiket);
         Color curCol = caveViewPrefs.wallColoringMode == WCM_ROUGE ? prevCol : getColorForPiket(curPiket);
                                  
-        V3 curPikPos = curPiket->piketEffectivePos;
-        V3 prevPikPos = prevPiket->piketEffectivePos;      
-        V3 roughDirrection = curPiket->wallsCenter - prevPiket->wallsCenter;
-        V3 middlePos = (curPikPos + prevPikPos)/2;
+         V3 curPikPos = curPiket->piketEffectivePos;
+         V3 prevPikPos = prevPiket->piketEffectivePos;      
+         V3 roughDirrection = curPiket->wallsCenter - prevPiket->wallsCenter;
+         V3 middlePos = (curPikPos + prevPikPos)/2;
 
 //        debugDraw(curPiket->wallsCenter, prevPiket->wallsCenter, Color::Green+Color::Blue);
 //        debugDraw(curPiket->wallsCenter, curPikPos);            
@@ -1452,6 +1620,8 @@ WallTriangles Cave::buildWallSegmentConvexQuadMode(const Piket* prevPiket, const
         
         std::vector<WallProj> prevWalls2dOrder = getWalls2d(prevPikPos, prevPiketDirrection, dirrection, prevPiket->classifiedWalls);
         std::vector<WallProj> curWalls2dOrder = getWalls2d(curPikPos, curPiketDirrection, dirrection, curPiket->classifiedWalls);
+
+
 
 //        std::set<int> prevConcaveWalls = getPolygonConcavePoints(prevWalls2dOrder);
 //        std::set<int> curConcaveWalls = getPolygonConcavePoints(curWalls2dOrder);
@@ -1630,6 +1800,7 @@ WallTriangles Cave::buildWallSegmentConvexQuadMode(const Piket* prevPiket, const
     }
     return wallPairs;     
 }
+
 
 WallTriangles Cave::buildWallSegmentCenterMode(const Piket* prevPiket, const Piket* curPiket) {
     WallTriangles wallPairs;
@@ -2110,6 +2281,7 @@ void Cave::addOutputLine(OuputType type, V3 a, V3 b, const Color& ca, const Colo
 void Cave::addOutputLine(OuputType type, V3 a, V3 b, const Color& c) {
 	addOutputLine(type, a, b, c, c);
 }
+
 
 const CM::EdgeInfo& Cave::getEdgeInfo(int from, int to) const {
 	static EdgeInfo nullEdge;

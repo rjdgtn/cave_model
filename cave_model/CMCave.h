@@ -32,6 +32,7 @@ public:
 protected:
 	
     void buildFakeZSurveyPikets(); // обрабатывает зигзаговую съемку создавая дополнительные пикеты 
+	void prebuildPikets(); // prepare pikets for build walls and oultine
     void buildEquatesMap();
 	void buildWallsObject(); // заполняет графический объект стен               
     // триангулирует поверхность стен между двумя пикетами методом указанном в настройках
@@ -50,6 +51,19 @@ protected:
     void buildCutsObject(); // строит графический объект точек пикетов
     void buildBoxObject();
 
+	// build outline visual output
+	// визуализирует контур пещеры. Преобразует набор кривых безье в набор линий для отображения
+	void buildOutline();
+	//void buildOutlineSegment(const Piket* nextPiket, const Piket* curPiket); 
+	
+	void buildOutlineBezier();
+	void buildOutlineSegmenteBezier(const Piket* nextPiket, const Piket* curPiket);
+
+	void invalidatePrebuild() {
+		prebuildInvalidated = true; 
+		outineCache.clear();
+	};
+
     void updateWallsSurrfaceMode(); // показать / скрыть граф.объекты в соответствии с настройками 
 
     // добавляет стены в пикеты без стен на основе крайних пикетов со стенами
@@ -66,6 +80,8 @@ protected:
     // гибрид между петляющий и пропускающей
     void genPiketsFakeWallsBudge(Piket* beginPiket, std::vector<Piket*> intermPikets, Piket* endPiket);
 
+	struct LeftRight { V3 left; V3 right; };
+	LeftRight getCornerCutPoints(const Piket* piket, V3 orientation);
     
     // функции построения графа
 //    const P3D* getP3D(int id) const;
@@ -168,6 +184,10 @@ protected:
 	std::tr1::unordered_map<OuputType, std::vector<OutputLine> > outputLines;
 	std::tr1::unordered_map<OuputType, bool> outputLayers;
 	float colourMult;
+
+	std::vector<LineBesier3> outineCache;
+
+	bool prebuildInvalidated;
 };
 
 }

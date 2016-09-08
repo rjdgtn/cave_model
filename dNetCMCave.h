@@ -16,7 +16,7 @@ namespace DotNetCaveModel{
 	{
 		CM_CAVEBRANCH,
 		CM_TIGHTNESS_SMOOTH,
-		CM_DEPTH_SMOOTH
+		CM_DEPTH_SMOOTH,
 	};
 
 	public enum class RenderMode
@@ -25,6 +25,7 @@ namespace DotNetCaveModel{
 		SM_ROUGH_WALLS,
 		SM_SMOOTH_WALLS,
 		SM_CUTS,
+		SM_OUTLINE,
 		SM_NUM
 	};
 
@@ -112,6 +113,7 @@ namespace DotNetCaveModel{
 		void updateForRoughWallsMode(CM::CaveViewPrefs* caveViewPrefs);
 		void updateForSmoothWallsMode(CM::CaveViewPrefs* caveViewPrefs);
 		void updateForSectionsWallsMode(CM::CaveViewPrefs* caveViewPrefs);
+		void updateForOutlineMode(CM::CaveViewPrefs* caveViewPrefs);
 
 	protected:
 		CM::CaveViewPrefs* caveViewPrefs;

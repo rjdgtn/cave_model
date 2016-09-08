@@ -23,6 +23,15 @@ inline V3 projectPointToLine(V3 lineA, V3 lineB, V3 point) {
     return A + a;
 }
 
+inline float projectPointToVector(V3 vector, V3 point) {
+	V3 projection = projectPointToLine(V3::ZERO, vector, point);
+	if (projection.angleBetween(vector).valueRadians() < M_PI) {
+		return vector.length();
+	} else {
+		return -vector.length();
+	}
+}
+
 inline V3 triangleNormal(V3 a, V3 b, V3 c) {
     return ((a - b).crossProduct(c - a).normalisedCopy());                      
 }
@@ -287,5 +296,34 @@ V3 phongSurfNorm(float u, float v, V3 an, V3 bn, V3 cn);
 
 std::vector<int> getConvexPoly(const std::vector<WallProj>& poly, int startPolyIdx, int finishPolyIdx, bool clockwise) ;
 std::vector<int> getConvexPoly(const std::vector<WallProj>& poly, bool clockwise = true) ;
+
+
+struct LineBesier3 {
+	LineBesier3(int aid, int bid, V3 a, V3 ac, V3 bc, V3 b):
+		aid(aid),
+		bid(bid),
+		a(a),
+		ac(ac),
+		bc(bc),
+		b(b) { }
+
+	LineBesier3() :
+		aid(0),
+		bid(0),
+		a(0, 0, 0),
+		ac(0, 0, 0),
+		bc(0, 0, 0),
+		b(0, 0, 0) { }
+
+	int aid;
+	int bid;
+	V3 a;
+	V3 ac;
+	V3 bc;
+	V3 b;
+
+
+
+};
 
 }
