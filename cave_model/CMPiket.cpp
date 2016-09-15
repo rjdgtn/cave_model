@@ -207,7 +207,7 @@ void Piket::propagateWalls(WallsPropagateMode propMode, WallsBlowMode blowMode) 
     classifiedWalls.insert(classifiedWalls.end(), newWalls.begin(), newWalls.end());
 }
 
-std::vector<PiketWall> Piket::propagateWallAngleAbove(int wallId1, int wallId2, int addWallsNum, WallsBlowMode blowMode) {
+std::vector<PiketWall> Piket::propagateWallAngleAbove(int wallId1, int wallId2, int addWallsNum, WallsBlowMode blowMode) const {
     std::vector<PiketWall> result;
 
     AssertReturn(classifiedWalls.size() > wallId1, return result);
@@ -236,47 +236,128 @@ std::vector<PiketWall> Piket::propagateWallAngleAbove(int wallId1, int wallId2, 
     return result;
 }
 
-std::vector<PiketWall> Piket::propagateWallBesier3(int h, int i, int j, int k, int addWallsNum, float strong) {
+LineBesier3 Piket::getCutSegmentBesier3(int h, int i, int j, int k, float strong) const {
+	LineBesier3 result;
+
+	int wallsNum = classifiedWalls.size();
+	
+	AssertReturn(wallsNum > h, return result);
+	AssertReturn(wallsNum > i, return result);
+	AssertReturn(wallsNum > j, return result);
+	AssertReturn(wallsNum > k, return result);
+
+	V3 hPos = classifiedWalls[h].pos;
+	V3 iPos = classifiedWalls[i].pos;
+	V3 jPos = classifiedWalls[j].pos;
+	V3 kPos = classifiedWalls[k].pos;
+
+	V3 icPos = (iPos + (iPos - hPos)) * 0.5f + jPos * 0.5f;
+	V3 jcPos = (jPos + (jPos - kPos)) * 0.5f + iPos * 0.5f;
+
+	float strongi = strong * pow(Math::Sin((hPos - iPos).angleBetween((jPos - iPos)) / 2), 0.5f);
+	float strongj = strong * pow(Math::Sin((kPos - jPos).angleBetween((iPos - jPos)) / 2), 0.5f);
+
+	icPos = iPos + (icPos - iPos).normalisedCopy() * (iPos - jPos).length() * strongi;
+	jcPos = jPos + (jcPos - jPos).normalisedCopy() * (iPos - jPos).length() * strongj;
+
+	result.a = iPos;
+	result.ac = icPos;
+	result.bc = jcPos;
+	result.b = jPos;
+
+	return result;
+}
+
+std::vector<PiketWall> Piket::propagateWallBesier3(int h, int i, int j, int k, int addWallsNum, float strong) const {
     std::vector<PiketWall> result;
-    int wallsNum = classifiedWalls.size();
-   // addWallsNum = 20;
 
-    AssertReturn(wallsNum > h, return result);
-    AssertReturn(wallsNum > i, return result);
-    AssertReturn(wallsNum > j, return result);
-    AssertReturn(wallsNum > k, return result);
+	LineBesier3 lineBezier3 = getCutSegmentBesier3(h, i, j, k, strong);
+ 
+	Debug::inst()->drawLine(lineBezier3.a, lineBezier3.b, Color::Red);
 
-    V3 hPos = classifiedWalls[h].pos  ;
-    V3 iPos = classifiedWalls[i].pos ;
-    V3 jPos = classifiedWalls[j].pos;
-    V3 kPos = classifiedWalls[k].pos  ;
-
-    V3 icPos = (iPos + (iPos - hPos)) * 0.5f + jPos * 0.5f;
-    V3 jcPos = (jPos + (jPos - kPos)) * 0.5f + iPos * 0.5f;
-
-    float strongi = strong * pow(Math::Sin((hPos-iPos).angleBetween((jPos-iPos))/2), 0.5f);
-    float strongj = strong * pow(Math::Sin((kPos-jPos).angleBetween((iPos-jPos))/2), 0.5f);
-
-    icPos = iPos + (icPos - iPos).normalisedCopy() * (iPos - jPos).length() * strongi;
-    jcPos = jPos + (jcPos - jPos).normalisedCopy() * (iPos - jPos).length() * strongj;
-
-//    if (i != 4) return result;
-
-	Debug::inst()->drawLine(iPos, icPos, Color::Red);
-//	debugManualObject->position(iPos);
-//	debugManualObject->colour();
-//	debugManualObject->position(icPos);
-
-	Debug::inst()->drawLine(jPos, jcPos, Color::Red);
-//	debugManualObject->position(jPos);
-//	debugManualObject->position(jcPos);
+	Debug::inst()->drawLine(lineBezier3.b, lineBezier3.bc, Color::Red);
 
     for (int addWallIdx = 1; addWallIdx <= addWallsNum; addWallIdx++) {
         double t = (float)addWallIdx / (addWallsNum + 1);
-        V3 pos = iPos * (1.0f-t)*(1.0f-t)*(1.0f-t) + 3.0f * icPos * t*(1.0f-t)*(1.0f-t) + 3.0f * jcPos * t*t*(1.0f-t) + jPos * t*t*t;
+		V3 pos = besier3(t, lineBezier3);
         result.push_back(PiketWall(pos));
     }
     return result;
+}
+
+Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 orientation) const {
+	LeftRight lr;
+	lr.left = V3(0, 0, 0);
+	lr.right = V3(0, 0, 0);
+	AssertReturn(lookDirection != V3::ZERO, return lr);
+
+	V3 piketPos = piketEffectivePos;
+
+	std::vector<WallProj> rotWalls = getWalls2d(piketPos, orientation, orientation, classifiedWalls);
+
+	V3 axis = lookDirection.crossProduct(orientation).normalisedCopy();
+	//debugDraw(piketPos, piketPos + axis * 10);
+	float min = FLT_MAX;
+	float max = -(FLT_MAX / 2);
+
+	for (int i = 0; i < rotWalls.size(); i++) {
+		int j = (i + 1) % rotWalls.size();
+
+		V3 iPos = classifiedWalls[rotWalls[i].idx].pos;
+		V3 jPos = classifiedWalls[rotWalls[j].idx].pos;
+
+		float val = projectPointToVector(axis, iPos - piketPos);
+		if (val >= max) {
+			max = val;
+			lr.right = iPos;
+		}
+		if (val < min) {
+			min = val;
+			lr.left = iPos;
+		}
+
+		int addWallsNum = iPos.distance(jPos) * PointsInMeter * 8 - 2;
+
+		int wallsNum = rotWalls.size();
+		int h = (wallsNum + i - 1) % wallsNum;
+		int k = (wallsNum + j + 1) % wallsNum;
+		std::vector<PiketWall> addinWalls = propagateWallBesier3(rotWalls[h].idx, rotWalls[i].idx, rotWalls[j].idx, rotWalls[k].idx, addWallsNum);
+
+		for (int j = 0; j < addinWalls.size(); j++) {
+			const PiketWall& pWall = addinWalls[j];
+			float val = projectPointToVector(axis, pWall.pos - piketPos);
+			if (val >= max) {
+				max = val;
+				lr.right = pWall.pos;
+			}
+			if (val < min) {
+				min = val;
+				lr.left = pWall.pos;
+			}
+		}
+	}
+	return lr;
+}
+
+std::vector<CM::LineBesier3> Piket::getCutBezier3() const {
+	std::vector<CM::LineBesier3> res;
+
+	std::vector<WallProj> rotWalls = getWalls2d(piketEffectivePos, dirrection, dirrection, classifiedWalls);
+	
+	int wallsNum = rotWalls.size();
+	for (int i = 0; i < rotWalls.size(); i++) {
+		int j = (i + 1) % rotWalls.size();
+
+		V3 iPos = classifiedWalls[rotWalls[i].idx].pos;
+		V3 jPos = classifiedWalls[rotWalls[j].idx].pos;
+
+		int h = (wallsNum + i - 1) % wallsNum;
+		int k = (wallsNum + j + 1) % wallsNum;
+		
+		res.push_back(getCutSegmentBesier3(rotWalls[h].idx, rotWalls[i].idx, rotWalls[j].idx, rotWalls[k].idx));
+	}
+	
+	return res;
 }
 
 void Piket::classifyWalls() {

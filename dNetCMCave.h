@@ -70,6 +70,7 @@ namespace DotNetCaveModel{
 		OT_DEBUG,
 		OT_DEBUG2,
 		OT_BOX,
+		OT_OUTLINE,
 		OT_NUM
 	};
 
@@ -92,8 +93,10 @@ namespace DotNetCaveModel{
 		~DNetCMCave();
 		
 		bool setMode(RenderMode mode);
+		RenderMode getMode() { return lastSetRenderMode; }
 		bool setColoringMode(ColoringMode mode, bool grayscale);
 		bool setColoringMode(ColoringMode mode);
+		bool setLookDirection(float x, float y, float z);
 		
 		void addVertice(DNPiketInfo^ piketInfo, int equatesVerticeId);
 		void addVertice(DNPiketInfo^ piketInfo);
@@ -116,6 +119,7 @@ namespace DotNetCaveModel{
 		void updateForOutlineMode(CM::CaveViewPrefs* caveViewPrefs);
 
 	protected:
+		RenderMode lastSetRenderMode {RenderMode::SM_ORIGINAL};
 		CM::CaveViewPrefs* caveViewPrefs;
 		CM::Cave* cmCave;
 	};

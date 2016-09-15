@@ -41,14 +41,20 @@ public:
 	std::string getLabel() const;
   //	const V3& pos() const { return allP3D.front().pos; }
 
+	struct LeftRight { V3 left; V3 right; };
+	LeftRight getCornerCutPoints(V3 lookDirection, V3 orientation) const;
+	std::vector<LineBesier3> getCutBezier3() const;
+
 protected:
     void processPiketPosAsWall();
     void updateEffectivePos(); // рассчитать центр стен
     void updateWallsCenter(); // рассчитать центр стен
     void updateDirrection(); // рассчитать нормаль к сечению хода образованному стенами
     void propagateWalls(WallsPropagateMode propMode, WallsBlowMode blowMode); // размножить стены
-    std::vector<PiketWall> propagateWallAngleAbove(int wallId1, int wallId2, int num, WallsBlowMode blowMode ); // алгорим размножени€ стен на основе угламежду ими и центром
-    std::vector<PiketWall> propagateWallBesier3(int h, int i, int j, int k, int addWallsNum, float strong = 0.4f); // алгоритм размножени€ стен на основе безье 3 пор€дка
+    std::vector<PiketWall> propagateWallAngleAbove(int wallId1, int wallId2, int num, WallsBlowMode blowMode ) const; // алгорим размножени€ стен на основе угламежду ими и центром
+    std::vector<PiketWall> propagateWallBesier3(int h, int i, int j, int k, int addWallsNum, float strong = 0.4f) const; // алгоритм размножени€ стен на основе безье 3 пор€дка
+	LineBesier3 getCutSegmentBesier3(int h, int i, int j, int k, float strong = 0.4f) const; // строит безье дл€ сегмента стены
+
     void classifyWalls(); // разделить на внутренние и внешние стены
     //V3 getWallsMassCenter(V3 dirrection); // –јЅќ“ј≈“ Ќ≈ѕ–ј¬»Ћ№Ќќ получить центр масс многоугольника стен
 

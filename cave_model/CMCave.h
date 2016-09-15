@@ -57,7 +57,7 @@ protected:
 	//void buildOutlineSegment(const Piket* nextPiket, const Piket* curPiket); 
 	
 	void buildOutlineBezier();
-	void buildOutlineSegmenteBezier(const Piket* nextPiket, const Piket* curPiket);
+	void buildOutlineSegmenteBezier(const Piket* nextPiket, const Piket* curPiket, std::tr1::unordered_set<int>& piketsWithAlreadyCreatedCutOutline);
 
 	void invalidatePrebuild() {
 		prebuildInvalidated = true; 
@@ -80,8 +80,6 @@ protected:
     // гибрид между петл€ющий и пропускающей
     void genPiketsFakeWallsBudge(Piket* beginPiket, std::vector<Piket*> intermPikets, Piket* endPiket);
 
-	struct LeftRight { V3 left; V3 right; };
-	LeftRight getCornerCutPoints(const Piket* piket, V3 orientation);
     
     // функции построени€ графа
 //    const P3D* getP3D(int id) const;
@@ -124,7 +122,7 @@ protected:
                                                     
     V3 normalisedEdgeCenter(V3 a, V3 an, V3 b, V3 bn);
 
-    void debugDraw(V3 a, V3 b, Color col = Color(1, 1, 0, 1));
+    void debugDraw(V3 a, V3 b, Color col = Color(0, 0.5, 0, 1));
 
     void processZSurveyPiketsChain(const std::list<const Piket*>& chain);
 
@@ -185,7 +183,7 @@ protected:
 	std::tr1::unordered_map<OuputType, bool> outputLayers;
 	float colourMult;
 
-	std::vector<LineBesier3> outineCache;
+	std::vector<CrossPiketLineBesier3> outineCache;
 
 	bool prebuildInvalidated;
 };

@@ -18,6 +18,7 @@ namespace DotNetCaveModel {
 
 		cmCave = new Cave();
 		caveViewPrefs = new CaveViewPrefs();
+		//caveViewPrefs->showDebug = true;
 	}
 
 
@@ -48,12 +49,20 @@ namespace DotNetCaveModel {
 			updateForOutlineMode(caveViewPrefs);
 			break;
 		}
-
+		lastSetRenderMode = mode;
 		return cmCave->setCaveViewPrefs(*caveViewPrefs);
 	}
 
 	bool DNetCMCave::setColoringMode(ColoringMode mode) {
 		return setColoringMode(mode, false);
+	}
+
+	bool DNetCMCave::setLookDirection(float x, float y, float z) {
+		caveViewPrefs->lookDirrection.x = x;
+		caveViewPrefs->lookDirrection.y = y;
+		caveViewPrefs->lookDirrection.z = z;
+		caveViewPrefs->lookDirrection.normalise();
+		return cmCave->setCaveViewPrefs(*caveViewPrefs);
 	}
 
 	bool DNetCMCave::setColoringMode(ColoringMode mode, bool grayscale)

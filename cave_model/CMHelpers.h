@@ -24,12 +24,13 @@ inline V3 projectPointToLine(V3 lineA, V3 lineB, V3 point) {
 }
 
 inline float projectPointToVector(V3 vector, V3 point) {
-	V3 projection = projectPointToLine(V3::ZERO, vector, point);
-	if (projection.angleBetween(vector).valueRadians() < M_PI) {
-		return vector.length();
-	} else {
-		return -vector.length();
-	}
+	return vector.dotProduct(point) / vector.dotProduct(vector);
+// 	V3 projection = projectPointToLine(V3::ZERO, vector, point);
+// 	if (projection.angleBetween(vector).valueRadians() < M_PI) {
+// 		return vector.length();
+// 	} else {
+// 		return -vector.length();
+// 	}
 }
 
 inline V3 triangleNormal(V3 a, V3 b, V3 c) {
@@ -154,6 +155,42 @@ struct WallProj {
 	Ogre::Radian to0XAngleByGlobalDir;
 };
 
+
+struct LineBesier3 {
+	// 	LineBesier3(int aid, int bid, V3 a, V3 ac, V3 bc, V3 b):
+	// 		aid(aid),
+	// 		bid(bid),
+	// 		a(a),
+	// 		ac(ac),
+	// 		bc(bc),
+	// 		b(b) { }
+
+	LineBesier3() :
+		a(0, 0, 0),
+		ac(0, 0, 0),
+		bc(0, 0, 0),
+		b(0, 0, 0) { }
+
+	V3 a;
+	V3 ac;
+	V3 bc;
+	V3 b;
+};
+
+struct CrossPiketLineBesier3 : public LineBesier3 {
+	CrossPiketLineBesier3(int aid, int bid, const LineBesier3& b) :
+		LineBesier3(b),
+		aid(aid),
+		bid(bid) { }
+	CrossPiketLineBesier3() :
+		aid(0),
+		bid(0) { }
+
+	int aid;
+	int bid;
+};
+
+
 // возврадает отсортированные по углу вокруг оси selfDirrection проходящей чере center
 // вершины двумерного многоугольника - проекции
 // стен пикета на плоскость с нормалью selfDirrection и центром center
@@ -229,6 +266,10 @@ inline V3 getControlPoint(V3 a, V3 b, V3 an, float controlLength) {
 inline V3 besier3(float t, V3 a, V3 ac, V3 bc, V3 b) {
     return a * (1.0f-t)*(1.0f-t)*(1.0f-t) + 3.0f * ac * t*(1.0f-t)*(1.0f-t) + 3.0f * bc * t*t*(1.0f-t) + b * t*t*t;            
 }
+ 
+inline V3 besier3(float t, const LineBesier3& a) {
+	return besier3(t, a.a, a.ac, a.bc, a.b);
+}
 
 // расчет поверхности безье для треугольника
 // besier surface for triangle: 
@@ -297,33 +338,5 @@ V3 phongSurfNorm(float u, float v, V3 an, V3 bn, V3 cn);
 std::vector<int> getConvexPoly(const std::vector<WallProj>& poly, int startPolyIdx, int finishPolyIdx, bool clockwise) ;
 std::vector<int> getConvexPoly(const std::vector<WallProj>& poly, bool clockwise = true) ;
 
-
-struct LineBesier3 {
-	LineBesier3(int aid, int bid, V3 a, V3 ac, V3 bc, V3 b):
-		aid(aid),
-		bid(bid),
-		a(a),
-		ac(ac),
-		bc(bc),
-		b(b) { }
-
-	LineBesier3() :
-		aid(0),
-		bid(0),
-		a(0, 0, 0),
-		ac(0, 0, 0),
-		bc(0, 0, 0),
-		b(0, 0, 0) { }
-
-	int aid;
-	int bid;
-	V3 a;
-	V3 ac;
-	V3 bc;
-	V3 b;
-
-
-
-};
 
 }
