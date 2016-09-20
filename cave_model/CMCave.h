@@ -16,18 +16,21 @@ class Cave {
 public:
 	Cave();
 	~Cave();
-    bool setCaveViewPrefs(const CaveViewPrefs& prefs);
+
+	bool setCaveViewPrefs(const CaveViewPrefs& prefs);
 
 	void addVertice(const PiketInfo& piketInfo, int equatesVerticeId = 0);
 	void addEdge(int verticeId0, int verticeId1);
 	void addEdge(const EdgeInfo& info);
 	void addWall(const Wall& wall, int linkToVerticeId, int parentPiketId = 0);
 
-	void finishInit();
+	void finishInit(OutputType enabledToGenerateOutput = (OutputType)~OT_UNKNOW);
 
-	const std::vector<OutputPoly>& getOutputPoly(OuputType type) { return outputPoly[type]; }
-	const std::vector<OutputLine>& getOutputLine(OuputType type) { return outputLines[type]; }
-	bool isOutputEnabled(OuputType type) { return outputLayers[type]; }
+	const std::vector<OutputPoly>& getOutputPoly(OutputType type) { return outputPoly[type]; }
+	const std::vector<OutputLine>& getOutputLine(OutputType type) { return outputLines[type]; }
+	bool isOutputEnabled(OutputType type) { return outputLayers[type]; }
+	
+	std::vector<CrossPiketLineBesier3> calcOutineBesier() const;
 
 protected:
 	
@@ -39,13 +42,13 @@ protected:
 	WallTriangles buildWallSegment(const Piket* piket, const Piket* nextPiket);
     // триангулирует поверхность стен между двум€ пикетами методом основывающимс€ 
     // угле между стенами вокруг пр€мой соединующий два пикета
-	WallTriangles buildWallSegmentCenterMode(const Piket* piket, const Piket* nextPiket);
+	//WallTriangles buildWallSegmentCenterMode(const Piket* piket, const Piket* nextPiket);
     // триангулирует поверхность стен между двум€ пикетами методом основывающимс€ 
     // на рекурсивной триангул€ции строго выпуклых многоугольников
 	WallTriangles buildWallSegmentConvexPolyMode(const Piket* piket, const Piket* nextPiket);
     // триангулирует поверхность стен между двум€ пикетами методом основывающимс€ 
     // на выпуклой по часовой треангул€ции четырехугольников
-	WallTriangles buildWallSegmentConvexQuadMode(const Piket* piket, const Piket* nextPiket);
+	//WallTriangles buildWallSegmentConvexQuadMode(const Piket* piket, const Piket* nextPiket);
     void buildThreadObject(); // строит графический объект нитки хода  
 	void buildPointsObject(); // строит графический объект точек пикетов
     void buildCutsObject(); // строит графический объект точек пикетов
@@ -54,15 +57,10 @@ protected:
 	// build outline visual output
 	// визуализирует контур пещеры. ѕреобразует набор кривых безье в набор линий дл€ отображени€
 	void buildOutline();
-	//void buildOutlineSegment(const Piket* nextPiket, const Piket* curPiket); 
+	void buildOutlineCut();
 	
-	void buildOutlineBezier();
-	void buildOutlineSegmenteBezier(const Piket* nextPiket, const Piket* curPiket, std::tr1::unordered_set<int>& piketsWithAlreadyCreatedCutOutline);
-
-	void invalidatePrebuild() {
-		prebuildInvalidated = true; 
-		outineCache.clear();
-	};
+	void buildOutlineBezier(std::vector<CrossPiketLineBesier3>& output, std::tr1::unordered_set<int>* piketsForCreateCutOutline = NULL) const;
+	void buildOutlineSegmenteBezier(const Piket* nextPiket, const Piket* curPiket, std::vector<CrossPiketLineBesier3>& output, std::tr1::unordered_set<int>* piketsForCreateCutOutline = NULL) const;
 
     void updateWallsSurrfaceMode(); // показать / скрыть граф.объекты в соответствии с настройками 
 
@@ -85,7 +83,7 @@ protected:
 //    const P3D* getP3D(int id) const;
 //    const P3D* getP3DbyMet(int met) const;
     Piket* getPiketMut(int id);
-    const Piket* getPiket(int id);
+    const Piket* getPiket(int id) const;
 //    int getPiketId(const P3D* p3d, int met) const;
 //    int getPiketId(const P3D* p3d) const;
 //    int getPiketId(int met) const;
@@ -129,12 +127,12 @@ protected:
 //    int getFreePiketId() const;
 	const Piket* addFakePiket(V3 pos, Color col, PiketMark priz, const std::vector<Wall>& walls, const std::vector<EdgeInfo>& edges);
     
-    static std::vector<std::pair<bool, int> > calcTriangulationOrdertConvexPolyMode(const std::vector<WallProj>& a, const std::vector<WallProj>& b, bool clockwise, bool force_convex);
-    static std::vector<std::pair<bool, int> > calcTriangulationOrdertConvexPolyMode(const std::vector<WallProj>& a, int aStart, int aEnd, const std::vector<WallProj>& b, int bStart, int bEnd, bool clockwise, bool force_convex) ;
+    static std::vector<std::pair<bool, int> > calcTriangulationOrdertConvexPolyMode(const std::vector<ExtWallProj>& a, const std::vector<ExtWallProj>& b, bool clockwise, bool force_convex);
+    static std::vector<std::pair<bool, int> > calcTriangulationOrdertConvexPolyMode(const std::vector<ExtWallProj>& a, int aStart, int aEnd, const std::vector<ExtWallProj>& b, int bStart, int bEnd, bool clockwise, bool force_convex) ;
 
-	Color getColorForPiket(const Piket* piket);
-	Color getColorForPiketByEdges(const Piket* piket);
-	const Color& getColorForEdge(const Piket* from, const Piket* to);
+	Color getColorForPiket(const Piket* piket) const;
+	Color getColorForPiketByEdges(const Piket* piket) const;
+	const Color& getColorForEdge(const Piket* from, const Piket* to) const;
 	Color getDepthColor(float depthRate);
     
     static Color getColorByRatio(const std::vector<std::pair<float, Color> >& colors, float rate);
@@ -145,12 +143,14 @@ protected:
 	std::vector<const Piket*> getZSurveyEdges(const Piket* from) const;
 
 	// output:
-	void resetOutput(OuputType type);
-	void addOutputPoly(OuputType type, V3 a, V3 b, V3 c, V3 an, V3 bn, V3 cn, const Color& ca, const Color& cb, const Color& cc);
-	void addOutputPoly(OuputType type, V3 a, V3 b, V3 c, const Color& col);
-	void addOutputLine(OuputType type, V3 a, V3 b, const Color& c);
-	void addOutputLine(OuputType type, V3 a, V3 b, const Color& ca, const Color& cb);
+	bool isOutputEnabledToGenerate(OutputType ot) { return (ot & enabledToGenerate) > 0; }
+	void resetOutput(OutputType type);
+	void addOutputPoly(OutputType type, V3 a, V3 b, V3 c, V3 an, V3 bn, V3 cn, const Color& ca, const Color& cb, const Color& cc);
+	void addOutputPoly(OutputType type, V3 a, V3 b, V3 c, const Color& col);
+	void addOutputLine(OutputType type, V3 a, V3 b, const Color& c);
+	void addOutputLine(OutputType type, V3 a, V3 b, const Color& ca, const Color& cb);
 	
+	void addApproximartedCurvesToOuotput(const std::vector<CrossPiketLineBesier3>& curves, OutputType dst);
 
 protected: // неиспольземое
 //	std::vector<V3> calcCube(int i);
@@ -178,14 +178,14 @@ protected:
     std::vector<VerticeTriangle> smoothedTriangles;
 	std::map<Vertice, VerticeNormal> smoothedTrianglesVerticesNormals;
 
-	std::tr1::unordered_map<OuputType, std::vector<OutputPoly> > outputPoly;
-	std::tr1::unordered_map<OuputType, std::vector<OutputLine> > outputLines;
-	std::tr1::unordered_map<OuputType, bool> outputLayers;
+	std::tr1::unordered_map<OutputType, std::vector<OutputPoly> > outputPoly;
+	std::tr1::unordered_map<OutputType, std::vector<OutputLine> > outputLines;
+	std::tr1::unordered_map<OutputType, bool> outputLayers;
 	float colourMult;
 
-	std::vector<CrossPiketLineBesier3> outineCache;
-
 	bool prebuildInvalidated;
+
+	OutputType enabledToGenerate;
 };
 
 }

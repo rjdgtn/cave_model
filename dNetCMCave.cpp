@@ -184,14 +184,19 @@ namespace DotNetCaveModel {
 		addWall(wall, linkToVerticeId, parentPiketId);
 	}
 
-	void DNetCMCave::finishInit()
+	void DNetCMCave::finishInit() 
 	{
 		cmCave->finishInit();
+	}
+	
+	void DNetCMCave::finishInit(DMOuputType outputMask)
+	{
+		cmCave->finishInit((CM::OutputType)outputMask);
 	}
 
 	System::Collections::Generic::List<DNOutputPoly^>^ DNetCMCave::getOutputPoly(DMOuputType type)
 	{
-		const auto& outputPoly = cmCave->getOutputPoly((OuputType)type);
+		const auto& outputPoly = cmCave->getOutputPoly((OutputType)type);
 		List<DNOutputPoly^>^ res = gcnew List<DNOutputPoly^>(outputPoly.size());
 		for (const auto& poly : outputPoly) {
 			res->Add(gcnew DNOutputPoly(poly));
@@ -201,7 +206,7 @@ namespace DotNetCaveModel {
 
 	List<DMOutputLine^>^ DNetCMCave::getOutputLine(DMOuputType type)
 	{
-		const auto& outputLine = cmCave->getOutputLine((OuputType)type);
+		const auto& outputLine = cmCave->getOutputLine((OutputType)type);
 		List<DMOutputLine^>^ res = gcnew List<DMOutputLine^>(outputLine.size());
 		for (const auto& line : outputLine) {
 			res->Add(gcnew DMOutputLine(line));
@@ -211,7 +216,7 @@ namespace DotNetCaveModel {
 
 	bool DNetCMCave::isOutputEnabled(DMOuputType type)
 	{
-		return cmCave->isOutputEnabled((OuputType)type);
+		return cmCave->isOutputEnabled((OutputType)type);
 	}
 
 

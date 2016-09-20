@@ -196,7 +196,9 @@
     <ClCompile Include="cave_model\ogre\OgreVector2.cpp" />
     <ClCompile Include="cave_model\ogre\OgreVector3.cpp" />
     <ClCompile Include="cave_model\ogre\OgreVector4.cpp" />
-    <ClCompile Include="cave_model\wykobi\wykobi_build.cpp" />
+    <ClCompile Include="cave_model\wykobi\wykobi_build.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="cave_model\wykobi\wykobi_wrap.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -48,15 +48,10 @@ void Piket::addW3D(long long parentPiket, const Wall w3d) {
     allWalls.push_back(w3d);
 }
 
-
 void Piket::preProcessWalls(const CaveViewPrefs& caveViewPrefs) {
     classifyWalls();
     recalcPosCenterDirrection();
-    //processPiketPosAsWall();
-//    updateEffectivePos();
-//    updateDirrection();
-//    updateWallsCenter();
-    propagateWalls(caveViewPrefs.wallsPropagateMode, caveViewPrefs.wallsBlowMode);
+
     adjFakePikets.clear();
 }
 
@@ -77,6 +72,8 @@ void Piket::updateEffectivePos() {
     }
     // смещаем пикет немного в сторону чтобы не было стен прямо на пикете, откуда были бы проблемы с углами
     piketEffectivePos = pos + (center - pos).normalisedCopy() * 0.01f * PointsInMeter;
+
+	resetCache();
 }
 
 void Piket::updateWallsCenter() {
@@ -89,6 +86,8 @@ void Piket::updateWallsCenter() {
     } else {
         wallsCenter = piketEffectivePos;
     }
+
+	resetCache();
 //    wallsCenter = piketEffectivePos;
 //    wallsMassCenter = getWallsMassCenter(dirrection);
 }
@@ -118,6 +117,7 @@ void Piket::updateDirrection() {
     }
     dirrection.normalise();
 
+	resetCache();
 }
 
 //V3 OgrePiket::getWallsMassCenter(V3 dirrection) {
@@ -137,7 +137,7 @@ void Piket::updateDirrection() {
 void Piket::processPiketPosAsWall() {
     if (classifiedWalls.empty()) return;
 
-    std::vector<WallProj> rotWalls = getWalls2d(wallsCenter, dirrection, dirrection, classifiedWalls);
+    std::vector<WallProj> rotWalls = getWalls2d(dirrection);
 
     for (int i = 0; i < classifiedWalls.size(); i++) {
         if (classifiedWalls[i].pos.distance(pos) < 0.001 * PointsInMeter) {
@@ -167,74 +167,74 @@ void Piket::processPiketPosAsWall() {
 //     }
 }
 
-void Piket::propagateWalls(WallsPropagateMode propMode, WallsBlowMode blowMode) {
-    if (classifiedWalls.empty()) return;
-
-    std::vector<WallProj> rotWalls = getWalls2d(wallsCenter, dirrection, dirrection, classifiedWalls);
-    std::vector<PiketWall> newWalls;
-
-    for (int i = 0; i < rotWalls.size(); i++) {
-        int j = (i + 1) % rotWalls.size();
-
-        V3 iPos = classifiedWalls[rotWalls[i].idx].pos - wallsCenter;
-        V3 jPos = classifiedWalls[rotWalls[j].idx].pos - wallsCenter;
-
-        int addWallsNum = 0;
-        if (propMode == WPM_X2) addWallsNum = 1;
-        else if (propMode == WPM_X4) addWallsNum = 2;
-        else if (propMode == WPM_1M) addWallsNum = (jPos - iPos).length() / 100 / 1;
-        else if (propMode == WPM_2M) addWallsNum = (jPos - iPos).length() / 100 / 2;
-        else if (propMode == WPM_4M) addWallsNum = (jPos - iPos).length() / 100 / 4;
-        else if (propMode == WPM_10D) addWallsNum = (jPos.angleBetween(iPos)).valueDegrees() / 5;
-        else if (propMode == WPM_20D) addWallsNum = (jPos.angleBetween(iPos)).valueDegrees() / 20;
-        else if (propMode == WPM_30D) addWallsNum = (jPos.angleBetween(iPos)).valueDegrees() / 30;
-
-        std::vector<PiketWall> addinWalls;
-        if (blowMode == WBM_NONE
-         || blowMode == WBM_LINEAR
-         || blowMode == WBM_COS2PI
-         || blowMode == WBM_COSCOS2PI) {
-            addinWalls = propagateWallAngleAbove(rotWalls[i].idx, rotWalls[j].idx, addWallsNum, blowMode);
-        } else if (blowMode == WBM_BESIER3) {
-            int wallsNum = rotWalls.size();
-            int h = (wallsNum + i - 1) % wallsNum;
-            int k = (wallsNum + j + 1) % wallsNum;
-            addinWalls = propagateWallBesier3(rotWalls[h].idx, rotWalls[i].idx, rotWalls[j].idx, rotWalls[k].idx, addWallsNum);
-        }
-
-        newWalls.insert(newWalls.end(), addinWalls.begin(), addinWalls.end());
-    }
-    classifiedWalls.insert(classifiedWalls.end(), newWalls.begin(), newWalls.end());
-}
-
-std::vector<PiketWall> Piket::propagateWallAngleAbove(int wallId1, int wallId2, int addWallsNum, WallsBlowMode blowMode) const {
-    std::vector<PiketWall> result;
-
-    AssertReturn(classifiedWalls.size() > wallId1, return result);
-    AssertReturn(classifiedWalls.size() > wallId2, return result);
-
-    V3 iPos = classifiedWalls[wallId1].pos - wallsCenter;
-    V3 jPos = classifiedWalls[wallId2].pos - wallsCenter;
-
-    for (int addWallIdx = 1; addWallIdx <= addWallsNum; addWallIdx++) {
-        float offset = (float)addWallIdx / (addWallsNum + 1);
-        V3 pos = iPos + (jPos - iPos) * offset;
-        if (blowMode == WBM_NONE) {
-            pos = wallsCenter + pos;
-        } else {
-            float sinOffset = 0.5f;
-
-            if (blowMode == WBM_LINEAR) sinOffset = offset;
-            else if (blowMode == WBM_COS2PI) sinOffset = sinusate(offset);
-            else if (blowMode == WBM_COSCOS2PI) sinOffset = sinusate(sinusate(offset));
-
-            pos = wallsCenter + pos.normalisedCopy() * (iPos.length()*(1.0f - sinOffset) + jPos.length()*sinOffset);
-        }
-
-        result.push_back(PiketWall(pos));
-    }
-    return result;
-}
+// void Piket::propagateWalls(WallsPropagateMode propMode, WallsBlowMode blowMode) {
+//     if (classifiedWalls.empty() || propMode == WPM_NONE) return;
+// 
+//     std::vector<WallProj> rotWalls = getWalls2d(dirrection);
+//     std::vector<PiketWall> newWalls;
+// 
+//     for (int i = 0; i < rotWalls.size(); i++) {
+//         int j = (i + 1) % rotWalls.size();
+// 
+//         V3 iPos = classifiedWalls[rotWalls[i].idx].pos - wallsCenter;
+//         V3 jPos = classifiedWalls[rotWalls[j].idx].pos - wallsCenter;
+// 
+//         int addWallsNum = 0;
+//         if (propMode == WPM_X2) addWallsNum = 1;
+//         else if (propMode == WPM_X4) addWallsNum = 2;
+//         else if (propMode == WPM_1M) addWallsNum = (jPos - iPos).length() / 100 / 1;
+//         else if (propMode == WPM_2M) addWallsNum = (jPos - iPos).length() / 100 / 2;
+//         else if (propMode == WPM_4M) addWallsNum = (jPos - iPos).length() / 100 / 4;
+//         else if (propMode == WPM_10D) addWallsNum = (jPos.angleBetween(iPos)).valueDegrees() / 5;
+//         else if (propMode == WPM_20D) addWallsNum = (jPos.angleBetween(iPos)).valueDegrees() / 20;
+//         else if (propMode == WPM_30D) addWallsNum = (jPos.angleBetween(iPos)).valueDegrees() / 30;
+// 
+//         std::vector<PiketWall> addinWalls;
+//         if (blowMode == WBM_NONE
+//          || blowMode == WBM_LINEAR
+//          || blowMode == WBM_COS2PI
+//          || blowMode == WBM_COSCOS2PI) {
+//             addinWalls = propagateWallAngleAbove(rotWalls[i].idx, rotWalls[j].idx, addWallsNum, blowMode);
+//         } else if (blowMode == WBM_BESIER3) {
+//             int wallsNum = rotWalls.size();
+//             int h = (wallsNum + i - 1) % wallsNum;
+//             int k = (wallsNum + j + 1) % wallsNum;
+//             addinWalls = propagateWallBesier3(rotWalls[h].idx, rotWalls[i].idx, rotWalls[j].idx, rotWalls[k].idx, addWallsNum);
+//         }
+// 
+//         newWalls.insert(newWalls.end(), addinWalls.begin(), addinWalls.end());
+//     }
+//     classifiedWalls.insert(classifiedWalls.end(), newWalls.begin(), newWalls.end());
+// }
+// 
+// std::vector<PiketWall> Piket::propagateWallAngleAbove(int wallId1, int wallId2, int addWallsNum, WallsBlowMode blowMode) const {
+//     std::vector<PiketWall> result;
+// 
+//     AssertReturn(classifiedWalls.size() > wallId1, return result);
+//     AssertReturn(classifiedWalls.size() > wallId2, return result);
+// 
+//     V3 iPos = classifiedWalls[wallId1].pos - wallsCenter;
+//     V3 jPos = classifiedWalls[wallId2].pos - wallsCenter;
+// 
+//     for (int addWallIdx = 1; addWallIdx <= addWallsNum; addWallIdx++) {
+//         float offset = (float)addWallIdx / (addWallsNum + 1);
+//         V3 pos = iPos + (jPos - iPos) * offset;
+//         if (blowMode == WBM_NONE) {
+//             pos = wallsCenter + pos;
+//         } else {
+//             float sinOffset = 0.5f;
+// 
+//             if (blowMode == WBM_LINEAR) sinOffset = offset;
+//             else if (blowMode == WBM_COS2PI) sinOffset = sinusate(offset);
+//             else if (blowMode == WBM_COSCOS2PI) sinOffset = sinusate(sinusate(offset));
+// 
+//             pos = wallsCenter + pos.normalisedCopy() * (iPos.length()*(1.0f - sinOffset) + jPos.length()*sinOffset);
+//         }
+// 
+//         result.push_back(PiketWall(pos));
+//     }
+//     return result;
+// }
 
 LineBesier3 Piket::getCutSegmentBesier3(int h, int i, int j, int k, float strong) const {
 	LineBesier3 result;
@@ -285,7 +285,8 @@ std::vector<PiketWall> Piket::propagateWallBesier3(int h, int i, int j, int k, i
     return result;
 }
 
-Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 orientation) const {
+Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 normal) const {
+
 	LeftRight lr;
 	lr.left = V3(0, 0, 0);
 	lr.right = V3(0, 0, 0);
@@ -293,9 +294,9 @@ Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 orientation) con
 
 	V3 piketPos = piketEffectivePos;
 
-	std::vector<WallProj> rotWalls = getWalls2d(piketPos, orientation, orientation, classifiedWalls);
+	const std::vector<WallProj>& rotWalls = getWalls2d(normal);
 
-	V3 axis = lookDirection.crossProduct(orientation).normalisedCopy();
+	V3 axis = lookDirection.crossProduct(normal).normalisedCopy();
 	//debugDraw(piketPos, piketPos + axis * 10);
 	float min = FLT_MAX;
 	float max = -(FLT_MAX / 2);
@@ -337,27 +338,12 @@ Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 orientation) con
 		}
 	}
 	return lr;
-}
-
-std::vector<CM::LineBesier3> Piket::getCutBezier3() const {
-	std::vector<CM::LineBesier3> res;
-
-	std::vector<WallProj> rotWalls = getWalls2d(piketEffectivePos, dirrection, dirrection, classifiedWalls);
-	
-	int wallsNum = rotWalls.size();
-	for (int i = 0; i < rotWalls.size(); i++) {
-		int j = (i + 1) % rotWalls.size();
-
-		V3 iPos = classifiedWalls[rotWalls[i].idx].pos;
-		V3 jPos = classifiedWalls[rotWalls[j].idx].pos;
-
-		int h = (wallsNum + i - 1) % wallsNum;
-		int k = (wallsNum + j + 1) % wallsNum;
-		
-		res.push_back(getCutSegmentBesier3(rotWalls[h].idx, rotWalls[i].idx, rotWalls[j].idx, rotWalls[k].idx));
-	}
-	
-	return res;
+	// 	if (const LeftRight* res = cache.getCornerCut(lookDirection)) {
+	// 		return *res;
+	// 	} else {
+// 		cache.setCornerCut(lr, lookDirection);
+// 		return getCornerCutPoints(lookDirection);
+	//}
 }
 
 void Piket::classifyWalls() {
@@ -367,37 +353,12 @@ void Piket::classifyWalls() {
 			classifiedWalls.push_back(PiketWall(allWalls.at(i).pos));
 		//}
 	}
+	resetCache();
+}
 
-//    piket->checkWallsCenter();
-//
-//    std::vector<int>::const_iterator assocPikIt = piket->adjPikets.begin();
-//    while(true) {
-//        if (assocPikIt == piket->adjPikets.end()) assocPikIt = piket->adjPikets.begin();
-//        if (assocPikIt == piket->adjPikets.end()) break;
-//
-//        Piket* assocPiket = getPiket(*assocPikIt);
-//        assocPiket->checkWallsCenter();
-//
-//        V3 dirrection = piket->wallsCenter - assocPiket->wallsCenter;
-//        Quaternion dirrectionRotation = dirrection.getRotationTo(V3::UNIT_Z);
-//
-//        // массив повернутых относительных расстояний до стен
-//        // чем больше Z тем дальше от assocPiket
-//        std::vector<PreperedForClassifyWall> rotatedWalls;
-//        for (int i = 0; i < piket->allWalls.size(); i++) {
-//            V3 rotRelPos = dirrectionRotation * (piket->allWalls[i]->pos - piket->wallsCenter);
-//            rotatedWalls.push_back(PreperedForClassifyWall(piket->allWalls[i], rotRelPos));
-//        }
-//
-//        std::sort(rotatedWalls.begin(), rotatedWalls.end(), &compareWallsByRotatedZ);
-//
-//        // массив индексов стен уже ассоциированных с assocPiket;
-////        vector<int> fixedWalls;
-////        for (i = 0; i < rotatedWalls.size(); i++) {
-////
-////
-////        }
-//    }
+void Piket::addFakeWall(const PiketWall& wall) {
+	classifiedWalls.push_back(wall);
+	resetCache();
 }
 
 bool Piket::isInactive() const {
@@ -505,4 +466,170 @@ std::string Piket::getName() const {
 //	}
 //	return allP3D.front().name;
 }
+
+const std::vector<CM::WallProj>& Piket::getWalls2d(V3 dirrection) const {
+	if (const std::vector<WallProj>* res = cache.getWalls2d(dirrection)) {
+		return *res;
+	} else {
+		if (const std::vector<CM::WallProj>* reverseW2d = cache.getWalls2d(-dirrection)) {
+			std::vector<CM::WallProj> copyForRevert = *reverseW2d;
+			std::reverse(copyForRevert.begin(), copyForRevert.end());
+			for (int i = 0; i < copyForRevert.size(); i++) {
+				copyForRevert[i].to0XAngleBySelfDir = Radian(M_PI) - copyForRevert[i].to0XAngleBySelfDir;
+				copyForRevert[i].posBySelfDir = -copyForRevert[i].posBySelfDir;
+			}
+			cache.addWalls2d(dirrection, copyForRevert);
+			return getWalls2d(dirrection);
+		} else {
+			cache.addWalls2d(dirrection, CM::getWalls2d(piketEffectivePos, dirrection, classifiedWalls));
+			return getWalls2d(dirrection);
+		}
+	}
+}
+
+const std::vector<CM::WallProj>& Piket::getWalls2dWithConvexCorrection(V3 dirrection) const {
+	if (const std::vector<WallProj>* res = cache.getWalls2dWithConvexCorrection(dirrection)) {
+		return *res;
+	} else {
+		if (const std::vector<CM::WallProj>* reverseW2d = cache.getWalls2dWithConvexCorrection(-dirrection)) {
+			std::vector<CM::WallProj> copyForRevert = *reverseW2d;
+			std::reverse(copyForRevert.begin(), copyForRevert.end());
+			for (int i = 0; i < copyForRevert.size(); i++) {
+				copyForRevert[i].to0XAngleBySelfDir = Radian(M_PI) - copyForRevert[i].to0XAngleBySelfDir;
+				copyForRevert[i].posBySelfDir = -copyForRevert[i].posBySelfDir;
+			}
+			cache.addWalls2dWithConvexCorrection(dirrection, copyForRevert);
+			return getWalls2dWithConvexCorrection(dirrection);
+		} else {
+			cache.addWalls2dWithConvexCorrection(dirrection, CM::getWalls2dWithConvexCorrection(piketEffectivePos, dirrection, classifiedWalls));
+			return getWalls2dWithConvexCorrection(dirrection);
+		}
+	}
+}
+
+std::vector<ExtWallProj> Piket::convertToExtWalls2d(const std::vector<WallProj>& source, V3 globalDirrection) const {
+	Quaternion globalDirrectionRotation = globalDirrection.getRotationTo(V3::UNIT_Z);
+	std::vector<ExtWallProj> result;
+	const V3 center = piketEffectivePos;
+	for (int i = 0; i < source.size(); i++) {
+		const PiketWall& w = classifiedWalls[source[i].idx];
+		V3 globalRotWall = globalDirrectionRotation * (w.pos - center);
+		V2 globalProjPos(globalRotWall.x, globalRotWall.y);
+		//Radian toGlobal0XAngle = V2::UNIT_X.angleTo(globalProjPos);
+		result.emplace_back(source[i], globalProjPos);
+	}
+	return result;
+}
+
+std::vector<ExtWallProj> Piket::getExtWalls2d(V3 sortDirrection, V3 globalDirrection) const {
+	const std::vector<WallProj>& wall2d = getWalls2d(sortDirrection);
+	return convertToExtWalls2d(wall2d, globalDirrection);
+}
+
+std::vector<ExtWallProj> Piket::getExtWalls2dWithConvexCorrection(V3 sortDirrection, V3 globalDirrection) const {
+	const std::vector<WallProj>& wall2d = getWalls2dWithConvexCorrection(sortDirrection);
+	return convertToExtWalls2d(wall2d, globalDirrection);
+}
+
+const std::vector<CM::LineBesier3>& Piket::getCutBezier3() const {
+	if (const std::vector<CM::LineBesier3>* res = cache.getCutBezier3()) {
+		return *res;
+	} else {
+		std::vector<CM::LineBesier3> temp;
+
+		std::vector<WallProj> rotWalls = getWalls2d(dirrection);
+
+		int wallsNum = rotWalls.size();
+		for (int i = 0; i < rotWalls.size(); i++) {
+			int j = (i + 1) % rotWalls.size();
+
+			V3 iPos = classifiedWalls[rotWalls[i].idx].pos;
+			V3 jPos = classifiedWalls[rotWalls[j].idx].pos;
+
+			int h = (wallsNum + i - 1) % wallsNum;
+			int k = (wallsNum + j + 1) % wallsNum;
+
+			temp.push_back(getCutSegmentBesier3(rotWalls[h].idx, rotWalls[i].idx, rotWalls[j].idx, rotWalls[k].idx));
+		}
+
+		cache.setCutBezier3(temp);
+		return *cache.getCutBezier3();
+	}
+}
+
+void Piket::getCrossPiketLineBesier3(std::vector<CrossPiketLineBesier3>& output) const {
+	const std::vector<CM::LineBesier3>& cut = getCutBezier3();
+	for (int i = 0; i < cut.size(); i++) {
+		CrossPiketLineBesier3 cutSegment(id, id, cut[i]);
+		output.push_back(cutSegment);
+	}
+}
+
+float Piket::getMinCutDimension() const {
+	if (const float* res = cache.getMinCutDimension()) {
+		return *res;
+	} else {
+		float maxDim = getMaxDimension();
+		float square = polySquare(getWalls2d(dirrection));
+		float minDim = 0;
+		if (maxDim > 0) minDim = square / maxDim / (M_PI * 0.9) * 4;
+		cache.setMinCutDimension(minDim);
+		return minDim;
+	}
+}
+
+void PiketCache::addWalls2d(V3 dirrection, std::vector<WallProj> w2d) {
+	std::vector<Walls2dCache>::iterator it = walls2d.begin();
+	for (; it != walls2d.end(); it++) {
+		if (it->dirrection == dirrection) {
+			it->walls2d = w2d;
+			return;
+		}
+	}
+	Walls2dCache cache;
+	cache.dirrection = dirrection;
+	cache.walls2d = w2d;
+	walls2d.push_back(cache);
+}
+
+void PiketCache::addWalls2dWithConvexCorrection(V3 dirrection, std::vector<WallProj> w2d) {
+	std::vector<Walls2dCache>::iterator it = walls2dWithConvexCorrection.begin();
+	for (; it != walls2dWithConvexCorrection.end(); it++) {
+		if (it->dirrection == dirrection) {
+			it->walls2d = w2d;
+			return;
+		}
+	}
+	Walls2dCache cache;
+	cache.dirrection = dirrection;
+	cache.walls2d = w2d;
+	walls2dWithConvexCorrection.push_back(cache);
+}
+
+void PiketCache::reset()
+{
+	walls2d.clear();
+	walls2dWithConvexCorrection.clear();
+	delete minCutDimension;
+	minCutDimension = NULL;
+	delete cutBezier3;
+	cutBezier3 = NULL;
+}
+
+const std::vector<WallProj>* PiketCache::getWalls2d(V3 dirrection) const {
+	std::vector<Walls2dCache>::const_iterator it = walls2d.begin();
+	for ( ; it != walls2d.end(); it++) {
+		if (it->dirrection == dirrection) return &(it->walls2d);
+	}
+	return nullptr;
+}
+
+const std::vector<WallProj>* PiketCache::getWalls2dWithConvexCorrection(V3 dirrection) const {
+	std::vector<PiketCache::Walls2dCache>::const_iterator it = walls2dWithConvexCorrection.begin();
+	for (; it != walls2dWithConvexCorrection.end(); it++) {
+		if (it->dirrection == dirrection) return &(it->walls2d);
+	}
+	return nullptr;
+}
+
 }

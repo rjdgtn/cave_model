@@ -142,8 +142,8 @@ protected:
 };
 
 struct WallProj {
-    WallProj(int idx, V2 posBySelfDir, Ogre::Radian to0XAngleBySelfDir, V2 posByGlobalDir, Ogre::Radian to0XAngleByGlobalDir):
-    idx(idx), posBySelfDir(posBySelfDir), to0XAngleBySelfDir(to0XAngleBySelfDir), posByGlobalDir(posByGlobalDir), to0XAngleByGlobalDir(to0XAngleByGlobalDir) { }
+    WallProj(int idx, V2 posBySelfDir, Ogre::Radian to0XAngleBySelfDir/*, V2 posByGlobalDir, Ogre::Radian to0XAngleByGlobalDir*/):
+    idx(idx), posBySelfDir(posBySelfDir), to0XAngleBySelfDir(to0XAngleBySelfDir)/*, posByGlobalDir(posByGlobalDir), to0XAngleByGlobalDir(to0XAngleByGlobalDir)*/{ }
                 
     static bool compareBySelf0XAngle(const WallProj& w1, const WallProj& w2);
     static int minSelf0XAngleWallPoint(WallProj point, const std::vector<WallProj>& rotWalls, bool abs, int skipPoint);
@@ -151,8 +151,18 @@ struct WallProj {
     int idx;
     V2 posBySelfDir;
 	Ogre::Radian to0XAngleBySelfDir;
-    V2 posByGlobalDir;
-	Ogre::Radian to0XAngleByGlobalDir;
+//     V2 posByGlobalDir;
+// 	Ogre::Radian to0XAngleByGlobalDir;
+};
+
+struct ExtWallProj: public WallProj {
+	ExtWallProj(int idx, V2 posBySelfDir, Ogre::Radian to0XAngleBySelfDir, V2 posByGlobalDir/*, Ogre::Radian to0XAngleByGlobalDir*/) :
+		WallProj(idx, posBySelfDir, to0XAngleBySelfDir), posByGlobalDir(posByGlobalDir)/*, to0XAngleByGlobalDir(to0XAngleByGlobalDir)*/ { }
+	ExtWallProj(const WallProj& wproj, V2 posByGlobalDir/*, Ogre::Radian to0XAngleByGlobalDir*/) :
+		WallProj(wproj), posByGlobalDir(posByGlobalDir)/*, to0XAngleByGlobalDir(to0XAngleByGlobalDir)*/ { }
+
+	V2 posByGlobalDir;
+	//Ogre::Radian to0XAngleByGlobalDir;
 };
 
 
@@ -195,8 +205,8 @@ struct CrossPiketLineBesier3 : public LineBesier3 {
 // вершины двумерного многоугольника - проекции
 // стен пикета на плоскость с нормалью selfDirrection и центром center
 // заодно вычиляет двумерные углы и позиции для нормали globadDirrection
-std::vector<WallProj> getWalls2d(V3 center, V3 selfDirrection, V3 globalDirrection, const std::vector<PiketWall>& walls); 
-std::vector<WallProj> getWalls2dWithConvexCorrection(V3 center, V3 selfDirrection, V3 globalDirrection, const std::vector<PiketWall>& walls);  
+std::vector<WallProj> getWalls2d(V3 center, V3 selfDirrection/*, V3 globalDirrection*/, const std::vector<PiketWall>& walls); 
+std::vector<WallProj> getWalls2dWithConvexCorrection(V3 center, V3 selfDirrection/*, V3 globalDirrection*/, const std::vector<PiketWall>& walls);  
 
 float sinusate(float val);
 
@@ -247,7 +257,7 @@ std::pair<int, int> getMaxMinDistanceWallsPair(const std::vector<PiketWall>& aPi
 
 std::pair<int, int> getMaxDistFromPointEdge(const std::vector<PiketWall>& aPikets, const std::vector<PiketWall>& bPikets, V3 c);
 
-std::pair<int, int> getMinTangentAngleDifEdge(const std::vector<WallProj>& aPikets, const std::vector<int>& aCovexIdx, const std::vector<WallProj>& bPikets, const std::vector<int>& bCovexIdx);
+std::pair<int, int> getMinTangentAngleDifEdge(const std::vector<ExtWallProj>& aPikets, const std::vector<int>& aCovexIdx, const std::vector<ExtWallProj>& bPikets, const std::vector<int>& bCovexIdx);
 
 // возврадает set WallProj::idx впуклых вершин многоугольника
 std::set<int> getPolygonConcavePoints(std::vector<WallProj> polygon);
@@ -335,8 +345,45 @@ V3 phongSurfNorm(float u, float v, V3 an, V3 bn, V3 cn);
 
 //V3 besier3x3x3Barycentric(float u, float v, V3 a, V3 an, V3 b, V3 bn, V3 c, V3 cn);
 
-std::vector<int> getConvexPoly(const std::vector<WallProj>& poly, int startPolyIdx, int finishPolyIdx, bool clockwise) ;
-std::vector<int> getConvexPoly(const std::vector<WallProj>& poly, bool clockwise = true) ;
+template <typename WP>
+std::vector<int> getConvexPoly(const std::vector<WP>& poly, int startPolyIdx, int finishPolyIdx, bool clockwise) {
+	std::vector<int> result(poly.size());
+	int polySegmentSize = finishPolyIdx - startPolyIdx + 1;
+	for (int i = startPolyIdx; i <= finishPolyIdx; i++) {
+		result[i] = i;
+	}
+
+	if (polySegmentSize <= 3) {
+		return result;
+	}
+	else {
+		bool concaveVerticeRemoved = false;
+		do {
+			concaveVerticeRemoved = false;
+			for (int i = 0; i < result.size(); i++) {
+				int pi = (i + result.size() - 1) % result.size();
+				int ni = (i + result.size() + 1) % result.size();
+				V2 piPos = poly.at(result.at(pi)).posBySelfDir;
+				V2 iPos = poly.at(result.at(i)).posBySelfDir;
+				V2 niPos = poly.at(result.at(ni)).posBySelfDir;
+
+				if (((piPos - iPos).crossProduct(niPos - iPos) > 0) == clockwise) {
+					result.erase(result.begin() + i);
+					concaveVerticeRemoved = true;
+					break;
+				}
+			}
+		} while (concaveVerticeRemoved && polySegmentSize > 3);
+	}
+
+	return result;
+}
+
+template <typename WP>
+std::vector<int> getConvexPoly(const std::vector<WP>& poly, bool clockwise = true) {
+	return getConvexPoly<WP>(poly, 0, poly.size() - 1, clockwise);
+}
+
 
 
 }

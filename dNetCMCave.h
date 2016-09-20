@@ -71,6 +71,7 @@ namespace DotNetCaveModel{
 		OT_DEBUG2,
 		OT_BOX,
 		OT_OUTLINE,
+		OT_OUTLINE_CUT,
 		OT_NUM
 	};
 
@@ -106,6 +107,7 @@ namespace DotNetCaveModel{
 		void addWall(float x, float y, float z, int linkToVerticeId, int parentPiketId);
 		void addWall(DNWall^ wall, int linkToVerticeId) { addWall(wall, linkToVerticeId, 0); };
 		void addWall(float x, float y, float z, int linkToVerticeId) { addWall(x, y, z, linkToVerticeId, 0); };
+		void finishInit(DMOuputType outputMask);
 		void finishInit();
 
 		List<DNOutputPoly^>^ getOutputPoly(DMOuputType type);

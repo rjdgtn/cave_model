@@ -30,20 +30,36 @@ prebuildInvalidated(true) {
 
 }
 
-void Cave::finishInit() {
+void Cave::finishInit(OutputType enabledToGenerateOutput) {
+	enabledToGenerate = enabledToGenerateOutput;
 	buildFakeZSurveyPikets();
-    
-	buildWallsObject();
-	buildOutline();
-	buildThreadObject(); 
-	buildCutsObject();
+	prebuildPikets();
+
+	buildThreadObject();
 	buildBoxObject();
+
+	buildWallsObject();
+	buildOutline();		
+	buildOutlineCut();
+	buildCutsObject();
     updateWallsSurrfaceMode();
 
-    logPikets();
-    
-//    debug->end();
     wasInited = true;
+}
+
+std::vector<CM::CrossPiketLineBesier3> Cave::calcOutineBesier() const
+{
+	std::tr1::unordered_set<int> piketsForCreateCutOutline;
+	std::vector<CrossPiketLineBesier3> outineBesier;
+	buildOutlineBezier(outineBesier, &piketsForCreateCutOutline);
+
+	std::tr1::unordered_set<int>::const_iterator it = piketsForCreateCutOutline.begin();
+	for (; it != piketsForCreateCutOutline.end(); it++) {
+		const Piket* piket = getPiket(*it);
+		AssertReturn(piket, continue;);
+		piket->getCrossPiketLineBesier3(outineBesier);
+	}
+	return outineBesier;
 }
 
 Cave::~Cave() {
@@ -72,20 +88,21 @@ bool Cave::setCaveViewPrefs(const CaveViewPrefs& prefs) {
 		if (caveViewPrefs.darkMode) colourMult = 0.6f;
 		else colourMult = 1.0f;
 
-		invalidatePrebuild();
+		//invalidatePrebuild();
 
 		resetOutput(OT_DEBUG);  
 		resetOutput(OT_DEBUG2);
 
 		buildWallsObject();
 		buildCutsObject();
-		updateWallsSurrfaceMode();
 		buildOutline();
+		buildOutlineCut();
+		updateWallsSurrfaceMode();
+
 
         return true;
     } else {
 		if (lookDirrectionChanged) {
-			outineCache.clear();
 			buildOutline();
 		}
         updateWallsSurrfaceMode();
@@ -101,6 +118,7 @@ void Cave::updateWallsSurrfaceMode() {
 	outputLayers[OT_WALL_CUTS] = caveViewPrefs.showSections;
 	outputLayers[OT_BOX] = caveViewPrefs.showBox;
 	outputLayers[OT_OUTLINE] = caveViewPrefs.showOutline;
+	outputLayers[OT_OUTLINE_CUT] = caveViewPrefs.showOutline;
 }
 
 void Cave::buildFakeZSurveyPikets() {
@@ -250,17 +268,17 @@ const Piket* Cave::addFakePiket(V3 pos, Color col, PiketMark priz, const std::ve
     return fakePiket;
 }               
 
-void Cave::genPiketsFakeWalls(FakeWallsMode mode) {
-    if (mode == GWNWPM_NONE) return;
-    std::tr1::unordered_map<int, Piket>::iterator pikiIt;
-    for (pikiIt = pikets.begin(); pikiIt != pikets.end(); pikiIt++) {
-        Piket* curPiket = &pikiIt->second;
-        if (!curPiket->classifiedWalls.empty() && !curPiket->isInactive()) {   
-            std::vector<Piket*> noWallsPikets;
-            genPiketsFakeWalls—hainSearch(mode, curPiket, curPiket, 0, noWallsPikets);           
-        }
-    }
-}
+// void Cave::genPiketsFakeWalls(FakeWallsMode mode) {
+//     if (mode == GWNWPM_NONE) return;
+//     for (pikiIt = pikets.begin(); pikiIt != pikets.end(); pikiIt++) {
+//         Piket* curPiket = &pikiIt->second;
+//         if (!curPiket->classifiedWalls.empty() && !curPiket->isInactive()) {   
+//             std::vector<Piket*> noWallsPikets;
+//             genPiketsFakeWalls—hainSearch(mode, curPiket, curPiket, 0, noWallsPikets);           
+//         }
+//     }
+// }   std::tr1::unordered_map<int, Piket>::iterator pikiIt;
+ 
           
 void Cave::genPiketsFakeWalls—hainSearch(FakeWallsMode mode, Piket* beginPiket, Piket* curEnd, int accumLength, std::vector<Piket*>& intermPikets) {
     AssertReturn(curEnd, return);
@@ -528,7 +546,7 @@ void Cave::genPiketsFakeWallsTrail(Piket* beginPiket, std::vector<Piket*> interm
                     else pos = edgeEnd; 
                 }                                          
 
-                curPiket->classifiedWalls.push_back(PiketWall(pos));
+                curPiket->addFakeWall(PiketWall(pos));
             }     
         }
         curPiket->recalcPosCenterDirrection();
@@ -537,11 +555,8 @@ void Cave::genPiketsFakeWallsTrail(Piket* beginPiket, std::vector<Piket*> interm
    
 
 void Cave::addVertice(const PiketInfo& piketInfo, int id) {
-	if (wasInited) {
-		LOG("fail to add vertice: cave already finish initialisation ");
-		return ;
-	}
-
+	AssertReturn(wasInited, LOG("fail to add vertice: cave already finish initialisation "); return;);
+	
 	Piket* curPiket = getPiketMut(id);
 	if (!curPiket) {
 		curPiket = &(pikets.insert(make_pair(piketInfo.id, Piket(piketInfo))).first->second);
@@ -551,15 +566,15 @@ void Cave::addVertice(const PiketInfo& piketInfo, int id) {
 }
 
 void Cave::addEdge(const EdgeInfo& info) {
+	AssertReturn(wasInited, LOG("fail to add edge: cave already finish initialisation "); return;);
+
 	addEdge(info.fromPiketId, info.toPiketId);
 	edges[make_pair(std::min(info.fromPiketId, info.toPiketId), std::max(info.fromPiketId, info.toPiketId))] = info;
 }
 
 void Cave::addEdge(int verticeId0, int verticeId1) {
-	if (wasInited) {
-		LOG("fail to add edge: cave already finish initialisation ");
-		return ;
-	}
+	AssertReturn(wasInited, LOG("fail to add vertice: cave already finish initialisation "); return;);
+
 
 	Piket* piket0 = getPiketMut(verticeId0);
 	if (!piket0) LOG("fail to add edge: piket " << verticeId0 << " not found ");
@@ -572,10 +587,7 @@ void Cave::addEdge(int verticeId0, int verticeId1) {
 }
 
 void Cave::addWall(const Wall& wall, int linkToVerticeId, int parentPiketId) {
-	if (wasInited) {
-		LOG("fail to add wall: cave already finish initialisation ");
-		return ;
-	}
+	AssertReturn(wasInited, LOG("fail to add wall: cave already finish initialisation "); return;);
 
 	if (parentPiketId == 0) parentPiketId = linkToVerticeId;
 
@@ -618,6 +630,9 @@ void Cave::buildPointsObject() {
 }
 
 void Cave::buildBoxObject() {
+	if (!isOutputEnabledToGenerate(OT_BOX)) { return; }
+	resetOutput(OT_BOX);
+
 	V3 boxMin(FLT_MAX, FLT_MAX, FLT_MAX);
 	V3 boxMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	std::tr1::unordered_map<int, Piket>::const_iterator it = pikets.begin();
@@ -641,7 +656,6 @@ void Cave::buildBoxObject() {
 			boxMax.z = std::max(boxMax.z, wit->pos.z);	
 		}
 	}
-	resetOutput(OT_BOX);
 
 	addOutputLine(OT_BOX, V3(boxMin.x, boxMin.y, boxMin.z), V3(boxMax.x, boxMin.y, boxMin.z), Color(0.75, 0.0, 0.0));
 
@@ -669,10 +683,9 @@ void Cave::buildBoxObject() {
 }
 
 void Cave::buildCutsObject() {
-	prebuildPikets();
-
+	if (!isOutputEnabledToGenerate(OT_WALL_CUTS)) { return; }
 	resetOutput(OT_WALL_CUTS);
-
+	
 	std::tr1::unordered_map<int, Piket>::iterator it = pikets.begin();
 	for (; it != pikets.end(); it++) {
 		const Piket* piket = &it->second;
@@ -680,7 +693,7 @@ void Cave::buildCutsObject() {
 		Color polyecol = col;
 		polyecol.a = 0.5f;
 
-		std::vector<WallProj> rotWalls = getWalls2d(piket->piketEffectivePos, piket->dirrection, piket->dirrection, piket->classifiedWalls);
+		const std::vector<WallProj>& rotWalls = piket->getWalls2d(piket->dirrection);
 		for (int i = 0; i < ((int)rotWalls.size()) + std::min(0, -caveViewPrefs.skipNum); i++) {
 			int ni = (i + 1) % rotWalls.size();
 			const WallProj& iWallProj = rotWalls[i];
@@ -696,7 +709,9 @@ void Cave::buildCutsObject() {
 }
 
 void Cave::buildThreadObject() {
+	if (!isOutputEnabledToGenerate(OT_THREAD)) { return; }
 	resetOutput(OT_THREAD);
+
 	std::tr1::unordered_map<int, Piket>::const_iterator itFrom = pikets.begin();
 	for (; itFrom != pikets.end(); itFrom++) {
 		const Piket& pFrom = itFrom->second;
@@ -717,68 +732,87 @@ void Cave::prebuildPikets() {
 			pikiIt->second.preProcessWalls(caveViewPrefs);
 		}
 
-		genPiketsFakeWalls(caveViewPrefs.generateWallsForNoWallsPiketsMode);
+//		genPiketsFakeWalls(caveViewPrefs.generateWallsForNoWallsPiketsMode);
 		prebuildInvalidated = false;
 	}
 }
 
-void Cave::buildOutlineBezier() {
-	prebuildPikets();
-	if (outineCache.empty()) {
-		outineCache.reserve(pikets.size() * (2 + (1 + 0.25) * 4));
-		std::tr1::unordered_set<int> piketsWithAlreadyCreatedCutOutline;
+void Cave::buildOutlineBezier(std::vector<CrossPiketLineBesier3>& output, std::tr1::unordered_set<int>* piketsForCreateCutOutline) const {	
+	std::tr1::unordered_set<int> piketsWithAlreadyCreatedCutOutline;
 
-		unordered_map<const Piket*, std::vector<const Piket*> > buildWalls;
-		std::tr1::unordered_map<int, Piket>::const_iterator it = pikets.begin();
-		for (; it != pikets.end(); it++) {
-			// if (segmentDraw > 0) break;
-			int id = it->first;
-			const Piket* curPiket = &it->second;
-			if (curPiket->isInactive()) continue;
+	unordered_map<const Piket*, std::vector<const Piket*> > buildWalls;
+	std::tr1::unordered_map<int, Piket>::const_iterator it = pikets.begin();
+	for (; it != pikets.end(); it++) {
+		// if (segmentDraw > 0) break;
+		int id = it->first;
+		const Piket* curPiket = &it->second;
+		if (curPiket->isInactive()) continue;
+		int i = 0;
+		float adjPiketsNum = curPiket->adjPikets.size();
+		float totalAdjPikets = curPiket->adjPikets.size() + curPiket->adjFakePikets.size();
+		if (totalAdjPikets != adjPiketsNum) {
 			int i = 0;
-			float adjPiketsNum = curPiket->adjPikets.size();
-			float totalAdjPikets = curPiket->adjPikets.size() + curPiket->adjFakePikets.size();
-			if (totalAdjPikets != adjPiketsNum) {
-				int i = 0;
-			}
-			for (int j = 0; j < totalAdjPikets; j++) {
-				const Piket* nextPiket = NULL;
-				if (j < adjPiketsNum) nextPiket = curPiket->adjPikets.at(j);
-				else nextPiket = curPiket->adjFakePikets.at(j - adjPiketsNum);
-
-				if (nextPiket->isInactive()) continue;
-
-				const Piket* minPiket = std::min(curPiket, nextPiket);
-				const Piket* maxPiket = std::max(curPiket, nextPiket);
-
-				std::vector<const Piket*>& buildOutlineForCurPiket = buildWalls[minPiket];
-				if (find(buildOutlineForCurPiket.begin(), buildOutlineForCurPiket.end(), maxPiket) != buildOutlineForCurPiket.end()) {
-					continue;
-				}
-				else {
-					buildOutlineForCurPiket.push_back(maxPiket);
-				}
-
-				bool findAtadjPikets = find(nextPiket->adjPikets.begin(), nextPiket->adjPikets.end(), curPiket) != nextPiket->adjPikets.end();
-				bool findAtFakeadjPikets = find(nextPiket->adjFakePikets.begin(), nextPiket->adjFakePikets.end(), curPiket) != nextPiket->adjFakePikets.end();
-				AssertReturn(findAtFakeadjPikets || findAtadjPikets, continue);
-
-				buildOutlineSegmenteBezier(nextPiket, curPiket, piketsWithAlreadyCreatedCutOutline);
-			}
 		}
+		for (int j = 0; j < totalAdjPikets; j++) {
+			const Piket* nextPiket = NULL;
+			if (j < adjPiketsNum) nextPiket = curPiket->adjPikets.at(j);
+			else nextPiket = curPiket->adjFakePikets.at(j - adjPiketsNum);
 
+			if (nextPiket->isInactive()) continue;
+
+			const Piket* minPiket = std::min(curPiket, nextPiket);
+			const Piket* maxPiket = std::max(curPiket, nextPiket);
+
+			std::vector<const Piket*>& buildOutlineForCurPiket = buildWalls[minPiket];
+			if (find(buildOutlineForCurPiket.begin(), buildOutlineForCurPiket.end(), maxPiket) != buildOutlineForCurPiket.end()) {
+				continue;
+			}
+			else {
+				buildOutlineForCurPiket.push_back(maxPiket);
+			}
+
+			bool findAtadjPikets = find(nextPiket->adjPikets.begin(), nextPiket->adjPikets.end(), curPiket) != nextPiket->adjPikets.end();
+			bool findAtFakeadjPikets = find(nextPiket->adjFakePikets.begin(), nextPiket->adjFakePikets.end(), curPiket) != nextPiket->adjFakePikets.end();
+			AssertReturn(findAtFakeadjPikets || findAtadjPikets, continue);
+
+			buildOutlineSegmenteBezier(nextPiket, curPiket, output, piketsForCreateCutOutline);
+		}
+	
+	}
+}
+
+void Cave::buildOutlineCut() {
+	LOG("Cave builld outline cut object started");
+	
+	std::vector<CrossPiketLineBesier3> outlineCutsBezier;
+	outlineCutsBezier.reserve(pikets.size() * 4);
+
+	unordered_map<const Piket*, std::vector<const Piket*> > buildWalls;
+	std::tr1::unordered_map<int, Piket>::const_iterator it = pikets.begin();
+	for (; it != pikets.end(); it++) {
+		const Piket* piket = &it->second;
+		outlineCutsBezier.clear();
+		outlineCutsBezier.reserve(piket->classifiedWalls.size());
+		piket->getCrossPiketLineBesier3(outlineCutsBezier);
+		addApproximartedCurvesToOuotput(outlineCutsBezier, OT_OUTLINE_CUT);				
 	}
 }
 
 void Cave::buildOutline() {
+	if (!isOutputEnabledToGenerate(OT_OUTLINE) && !isOutputEnabledToGenerate(OT_OUTLINE_CUT)) { return; }
 	LOG("Cave builld outline object started");
-
 	resetOutput(OT_OUTLINE);
 
-	buildOutlineBezier();
+	//std::tr1::unordered_set<int>* piketsForCreateCutOutline
+	std::vector<CrossPiketLineBesier3> outineBesier;
+	outineBesier.reserve(pikets.size() * (2 + 1.05));
+	buildOutlineBezier(outineBesier);
+	addApproximartedCurvesToOuotput(outineBesier, OT_OUTLINE);
+}
 
-	for (int i = 0; i < outineCache.size(); i++) {
-		const CrossPiketLineBesier3& line = outineCache[i];
+void Cave::addApproximartedCurvesToOuotput(const std::vector<CrossPiketLineBesier3>& curves, OutputType dst) {
+	for (int i = 0; i < curves.size(); i++) {
+		const CrossPiketLineBesier3& line = curves[i];
 		const Piket* aPiket = getPiket(line.aid);
 		const Piket* bPiket = getPiket(line.bid);
 
@@ -790,18 +824,20 @@ void Cave::buildOutline() {
 
 		for (int i = 0; i < 4; i++) {
 			float irate = i / 4.0f;
-			float nirate = (i+1) / 4.0f;
+			float nirate = (i + 1) / 4.0f;
 			V3 ipos = besier3(irate, line.a, line.ac, line.bc, line.b);
 			V3 nipos = besier3(nirate, line.a, line.ac, line.bc, line.b);
 
-			addOutputLine(OT_OUTLINE, ipos, nipos, bCol * irate + aCol*(1.0f-irate), bCol * nirate + aCol*(1.0f - nirate));
+			addOutputLine(dst, ipos, nipos, bCol * irate + aCol*(1.0f - irate), bCol * nirate + aCol*(1.0f - nirate));
 		}
 	}
 }
 
 void Cave::buildWallsObject() {
+	if (!isOutputEnabledToGenerate(OT_WALL)) { return; }
+
     LOG("Cave builld walls object started");
-	prebuildPikets();
+	//prebuildPikets();
     
     std::vector<WallTriangle> wallTriangles;
     unordered_map<const PiketWall*, WallNormal> wallNormals;
@@ -962,6 +998,8 @@ void Cave::buildWallsObject() {
 } 
 
 void Cave::buildWallTriangles() {
+	if (!isOutputEnabledToGenerate(OT_WALL)) { return; }
+	
     float maxHeight = -FLT_MAX/10;
 	float minHeight = FLT_MAX/10;
 	if (caveViewPrefs.wallColoringMode == WCM_DEPTH_SMOOTH) {
@@ -1294,11 +1332,13 @@ void Cave::drawTriangleSmooth2(int smooth, const Color& ca, const Color& cb, con
 }
 
 WallTriangles Cave::buildWallSegment(const Piket* piket, const Piket* nextPiket) {
-    if (caveViewPrefs.wallsSegmentTriangulationMode == WSTM_ANGLE) {
-        return buildWallSegmentCenterMode(piket, nextPiket);    
-    } else if (caveViewPrefs.wallsSegmentTriangulationMode == WSTM_CONVEX_QUAD) {
-        return buildWallSegmentConvexQuadMode(piket, nextPiket); 
-    } else if (caveViewPrefs.wallsSegmentTriangulationMode == WSTM_CONVEX_POLY) {
+//     if (caveViewPrefs.wallsSegmentTriangulationMode == WSTM_ANGLE) {
+//         return buildWallSegmentCenterMode(piket, nextPiket);    
+//     } else 
+// 	if (caveViewPrefs.wallsSegmentTriangulationMode == WSTM_CONVEX_QUAD) {
+//         return buildWallSegmentConvexQuadMode(piket, nextPiket); 
+//     } else 
+	if (caveViewPrefs.wallsSegmentTriangulationMode == WSTM_CONVEX_POLY) {
         return buildWallSegmentConvexPolyMode(piket, nextPiket);                         
     } else {
         AssertReturn(false, return WallTriangles());
@@ -1353,20 +1393,20 @@ WallTriangles Cave::buildWallSegmentConvexPolyMode(const Piket* prevPiket, const
 
         V3 dirrection = (prevPiketDirrection + curPiketDirrection) / 2;
 
-        std::vector<WallProj> prevWalls2dOrder;
-        std::vector<WallProj> curWalls2dOrder;
+        const std::vector<ExtWallProj>* prevWalls2dOrder = NULL;
+        const std::vector<ExtWallProj>* curWalls2dOrder = NULL;
         
         bool onlyConvexWalls = prevPiket->hasPriz(MARK_ONLY_CONVEX_WALLS) || curPiket->hasPriz(MARK_ONLY_CONVEX_WALLS);
         bool autoGeneratetPiket = curPiket->hasPriz(MARK_Z_SURVEY_FAKE) || prevPiket->hasPriz(MARK_Z_SURVEY_FAKE);
         if (autoGeneratetPiket && !onlyConvexWalls) {
-            prevWalls2dOrder = getWalls2dWithConvexCorrection(prevPikPos, prevPiketDirrection, dirrection, prevPiket->classifiedWalls); 
-            curWalls2dOrder = getWalls2dWithConvexCorrection(curPikPos, curPiketDirrection, dirrection, curPiket->classifiedWalls);
+			prevWalls2dOrder = &prevPiket->getExtWalls2dWithConvexCorrection(prevPiketDirrection, dirrection);
+            curWalls2dOrder = &curPiket->getExtWalls2dWithConvexCorrection(curPiketDirrection, dirrection);
         } else {
-            prevWalls2dOrder = getWalls2d(prevPikPos, prevPiketDirrection, dirrection, prevPiket->classifiedWalls); 
-            curWalls2dOrder = getWalls2d(curPikPos, curPiketDirrection, dirrection, curPiket->classifiedWalls);
+            prevWalls2dOrder = &prevPiket->getExtWalls2d(prevPiketDirrection, dirrection);
+            curWalls2dOrder = &curPiket->getExtWalls2d(curPiketDirrection, dirrection);
         }
 
-        std::vector<std::pair<bool, int> > trianOrder = calcTriangulationOrdertConvexPolyMode(prevWalls2dOrder, curWalls2dOrder, true, onlyConvexWalls);
+        std::vector<std::pair<bool, int> > trianOrder = calcTriangulationOrdertConvexPolyMode(*prevWalls2dOrder, *curWalls2dOrder, true, onlyConvexWalls);
 
 //        debugDraw(prevPikPos, prevPikPos + dirrection.normalisedCopy() * 200);
 //        debugDraw(curPikPos, curPikPos + curPiketDirrection.normalisedCopy() * 200);
@@ -1396,14 +1436,14 @@ WallTriangles Cave::buildWallSegmentConvexPolyMode(const Piket* prevPiket, const
                     curIdx = idx;
                 }    
             } else {   
-                const PiketWall& wi = prevPiket->classifiedWalls[prevWalls2dOrder[prevIdx].idx]; 
-                const PiketWall& wj = curPiket->classifiedWalls[curWalls2dOrder[curIdx].idx];
+                const PiketWall& wi = prevPiket->classifiedWalls[(*prevWalls2dOrder)[prevIdx].idx]; 
+                const PiketWall& wj = curPiket->classifiedWalls[(*curWalls2dOrder)[curIdx].idx];
                 if (trianOrder.at(i).first) {                                                 
-                    const PiketWall& wni = prevPiket->classifiedWalls[prevWalls2dOrder[idx].idx];
+                    const PiketWall& wni = prevPiket->classifiedWalls[(*prevWalls2dOrder)[idx].idx];
                     wallPairs.push_back(WallTriangle(prevCol, curCol, prevCol, CONTERCLOCKWISE, wi, wj, wni));  // œŒ–ﬂƒŒ  ¬¿∆≈Õ                       
                     prevIdx = idx;
                 } else {
-                    const PiketWall& wnj = curPiket->classifiedWalls[curWalls2dOrder[idx].idx];
+                    const PiketWall& wnj = curPiket->classifiedWalls[(*curWalls2dOrder)[idx].idx];
                     wallPairs.push_back(WallTriangle(curCol, prevCol, curCol, CLOCKWISE, wj, wi, wnj)); // œŒ–ﬂƒŒ  ¬¿∆≈Õ       
                     curIdx = idx;
                 }
@@ -1413,11 +1453,11 @@ WallTriangles Cave::buildWallSegmentConvexPolyMode(const Piket* prevPiket, const
     return wallPairs;
 }
                    
-std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(const std::vector<WallProj>& a, const std::vector<WallProj>& b, bool clockwise, bool force_convex) {
+std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(const std::vector<ExtWallProj>& a, const std::vector<ExtWallProj>& b, bool clockwise, bool force_convex) {
     return calcTriangulationOrdertConvexPolyMode(a, 0, a.size()-1, b, 0, b.size()-1, clockwise, force_convex);
 }
 
-std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(const std::vector<WallProj>& a, int aStart, int aEnd, const std::vector<WallProj>& b, int bStart, int bEnd, bool clockwise, bool force_convex) {
+std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(const std::vector<ExtWallProj>& a, int aStart, int aEnd, const std::vector<ExtWallProj>& b, int bStart, int bEnd, bool clockwise, bool force_convex) {
     // Ï‡ÒÒË‚˚ ËÌ‰ÂÍÒÓ‚ ‚ Ï‡ÒÒË‚‡ı a Ë b
     std::vector<int> aConvex = getConvexPoly(a, aStart, aEnd, clockwise);
 	std::vector<int> bConvex = getConvexPoly(b, bStart, bEnd, clockwise);
@@ -1508,7 +1548,7 @@ std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(c
     return  globalOrder;    
 }
 
-void Cave::buildOutlineSegmenteBezier(const Piket* prevPiket, const Piket* curPiket, bool forceAddCutOutline, std::tr1::unordered_set<int>& piketsWithAlreadyCreatedCutOutline, std::tr1::unordered_set<int>& piketsWithAlreadyCreatedCutOutline) {
+void Cave::buildOutlineSegmenteBezier(const Piket* prevPiket, const Piket* curPiket, std::vector<CrossPiketLineBesier3>& output, std::tr1::unordered_set<int>* piketsForCreateCutOutline) const {
 	AssertReturn(prevPiket && curPiket, return);
 	if (!prevPiket->classifiedWalls.empty() && !curPiket->classifiedWalls.empty()) {
 		Color prevCol = getColorForPiket(prevPiket);
@@ -1518,8 +1558,7 @@ void Cave::buildOutlineSegmenteBezier(const Piket* prevPiket, const Piket* curPi
 		V3 prevPikPos = prevPiket->piketEffectivePos;
 		V3 roughDirrection = curPiket->wallsCenter - prevPiket->wallsCenter;
 		
-		V3 curPiketDirrection = curPiket->dirrection;
-	
+		V3 curPiketDirrection = curPiket->dirrection;	
 		V3 prevPiketDirrection = prevPiket->dirrection;
 	
 		const float codirectionToleranceAngle = M_PI * (30.0f / 180);
@@ -1527,43 +1566,23 @@ void Cave::buildOutlineSegmenteBezier(const Piket* prevPiket, const Piket* curPi
 		float prevToLookAngle = prevPiketDirrection.angleBetween(caveViewPrefs.lookDirrection).valueRadians();
 		prevToLookAngle = std::min<float>(prevToLookAngle, M_PI - prevToLookAngle);
 		
-		if (forceAddCutOutline || prevToLookAngle < codirectionToleranceAngle) {
-			if (piketsWithAlreadyCreatedCutOutline.count(prevPiket->id) == 0) {
-				std::vector<CM::LineBesier3> cut = prevPiket->getCutBezier3();
-				for (int i = 0; i < cut.size(); i++) {
-					CrossPiketLineBesier3 cutSegment(prevPiket->id, prevPiket->id, cut[i]);
-					outineCache.push_back(cutSegment);
-				}
-				piketsWithAlreadyCreatedCutOutline.insert(prevPiket->id);
-			}
-		}
-
 		if (prevToLookAngle < codirectionToleranceAngle) {
 			prevPiketDirrection = roughDirrection;
+			if (piketsForCreateCutOutline) piketsForCreateCutOutline->insert(prevPiket->id);
 		}
-
 		
 		float curToLookAngle = curPiketDirrection.angleBetween(caveViewPrefs.lookDirrection).valueRadians();
-		curToLookAngle = std::min<float>(curToLookAngle,  M_PI - curToLookAngle);
-
-		if (forceAddCutOutline || curToLookAngle < codirectionToleranceAngle) {
-			if (piketsWithAlreadyCreatedCutOutline.count(curPiket->id) == 0) {
-				std::vector<CM::LineBesier3> cut = curPiket->getCutBezier3();
-				for (int i = 0; i < cut.size(); i++) {
-					CrossPiketLineBesier3 cutSegment(curPiket->id, curPiket->id, cut[i]);
-					outineCache.push_back(cutSegment);
-				}
-				piketsWithAlreadyCreatedCutOutline.insert(curPiket->id);
-			}
-		}
+		curToLookAngle = std::min<float>(curToLookAngle, M_PI - curToLookAngle);
 
 		if (curToLookAngle < codirectionToleranceAngle) {
 			curPiketDirrection = roughDirrection;
-		}
-		
+			if (piketsForCreateCutOutline) piketsForCreateCutOutline->insert(curPiket->id);
+		}		
 
 		Piket::LeftRight prevPiketLeftRight = prevPiket->getCornerCutPoints(caveViewPrefs.lookDirrection, prevPiketDirrection);
 		Piket::LeftRight curPiketLeftRight = curPiket->getCornerCutPoints(caveViewPrefs.lookDirrection, curPiketDirrection);
+
+		//if (prevPiketLeftRight.left.distance(curPiketLeftRight.left) > prevPiketLeftRight.left.distance(curPiketLeftRight.left))
 
 		V3 controlVecA = prevPiketDirrection.normalisedCopy();
 		V3 controlVecB = -curPiketDirrection.normalisedCopy();
@@ -1584,321 +1603,322 @@ void Cave::buildOutlineSegmenteBezier(const Piket* prevPiket, const Piket* curPi
 		rightCurve.ac = rightCurve.a + controlVecA * rightCurve.b.distance(rightCurve.a) * 0.25;
 		rightCurve.bc = rightCurve.b + controlVecB * rightCurve.b.distance(rightCurve.a) * 0.25;
 
-		outineCache.push_back(leftCurve);
-		outineCache.push_back(rightCurve);
+		output.push_back(leftCurve);
+		output.push_back(rightCurve);
 	}
 }
 
-WallTriangles Cave::buildWallSegmentConvexQuadMode(const Piket* prevPiket, const Piket* curPiket) {
-    WallTriangles wallPairs;
-    AssertReturn(prevPiket && curPiket, return wallPairs);
-    if (!prevPiket->classifiedWalls.empty() && !curPiket->classifiedWalls.empty()) {
-    
-        Color prevCol = getColorForPiket(prevPiket);
-        Color curCol = caveViewPrefs.wallColoringMode == WCM_ROUGE ? prevCol : getColorForPiket(curPiket);
-                                 
-         V3 curPikPos = curPiket->piketEffectivePos;
-         V3 prevPikPos = prevPiket->piketEffectivePos;      
-         V3 roughDirrection = curPiket->wallsCenter - prevPiket->wallsCenter;
-         V3 middlePos = (curPikPos + prevPikPos)/2;
+// WallTriangles Cave::buildWallSegmentConvexQuadMode(const Piket* prevPiket, const Piket* curPiket) {
+//     WallTriangles wallPairs;
+//     AssertReturn(prevPiket && curPiket, return wallPairs);
+//     if (!prevPiket->classifiedWalls.empty() && !curPiket->classifiedWalls.empty()) {
+//     
+//         Color prevCol = getColorForPiket(prevPiket);
+//         Color curCol = caveViewPrefs.wallColoringMode == WCM_ROUGE ? prevCol : getColorForPiket(curPiket);
+//                                  
+//          V3 curPikPos = curPiket->piketEffectivePos;
+//          V3 prevPikPos = prevPiket->piketEffectivePos;      
+//          V3 roughDirrection = curPiket->wallsCenter - prevPiket->wallsCenter;
+//          V3 middlePos = (curPikPos + prevPikPos)/2;
+// 
+// //        debugDraw(curPiket->wallsCenter, prevPiket->wallsCenter, Color::Green+Color::Blue);
+// //        debugDraw(curPiket->wallsCenter, curPikPos);            
+// //        debugDraw(prevPikPos, prevPiket->wallsCenter);
+//                                                                      
+//         V3 prevPiketDirrection = prevPiket->dirrection;
+//         if (prevPiketDirrection.angleBetween(roughDirrection) > Radian(M_PI_2)) {
+//             prevPiketDirrection = -prevPiketDirrection;
+//         } 
+//         V3 curPiketDirrection = curPiket->dirrection;
+//         if (curPiketDirrection.angleBetween(roughDirrection) > Radian(M_PI_2)) {
+//             curPiketDirrection = -curPiketDirrection;                                  
+//         }                     
+// 
+//         V3 dirrection = (prevPiketDirrection + curPiketDirrection) / 2;
+//         
+// //        debug->position(curPikPos);
+// //        debug->position(curPikPos + curPiketDirrection * 500); 
+// //        
+// //        debug->position(prevPikPos);
+// //        debug->position(prevPikPos + prevPiketDirrection * 500);
+//         
+//         std::vector<WallProj> prevWalls2dOrder = getWalls2d(prevPikPos, prevPiketDirrection, dirrection, prevPiket->classifiedWalls);
+//         std::vector<WallProj> curWalls2dOrder = getWalls2d(curPikPos, curPiketDirrection, dirrection, curPiket->classifiedWalls);
+// 
+// 
+// 
+// //        std::set<int> prevConcaveWalls = getPolygonConcavePoints(prevWalls2dOrder);
+// //        std::set<int> curConcaveWalls = getPolygonConcavePoints(curWalls2dOrder);
+// 
+// //        for (int i = 0; i < curWalls2dOrder.size(); i++) {
+// //            V3 p(1000, 0, 1000);
+// //            debug->position(p);
+// //            if (i == 0) debug->colour(Color::Red);
+// //            else if (curConcaveWalls.count(i) == 1) debug->colour(Color::White);
+// //            else debug->colour(Color::Blue);
+// //            debug->position(p + V3(curWalls2dOrder[i].pos.x, curWalls2dOrder[i].pos.y, 0));\                  
+// //        }
+// //        std::set<int>::iterator it = prevConcaveWalls.begin();
+// //        for (; it != prevConcaveWalls.end(); it++) {
+// //            debug->position(middlePos + V3(5, 5, 0));
+// //            debug->colour(Color::White);
+// //            debug->position(prevPiket->classifiedWalls[prevWalls2dOrder[*it].idx].pos);
+// //        }                                                                              
+// //
+// //        it = curConcaveWalls.begin();
+// //        for (; it != curConcaveWalls.end(); it++) {
+// //            debug->position(middlePos + V3(5, 5, 0));
+// //            debug->colour(Color::White);
+// //            debug->position(curPiket->classifiedWalls[curWalls2dOrder[*it].idx].pos);
+// //        }
+//         
+// //        reverse(prevWalls2dOrder.begin(), prevWalls2dOrder.end());
+// //        reverse(curWalls2dOrder.begin(), curWalls2dOrder.end());
+//         
+//         std::pair<int, int> startPikets = getMaxDistFromPointEdge(prevPiket->classifiedWalls, curPiket->classifiedWalls, middlePos);
+// 
+// //        std::vector<WallProj> ____prevWalls2dOrder = getWalls2d(prevPikPos, dirrection, prevPiket->classifiedWalls); 
+// //        std::vector<WallProj> ____curWalls2dOrder = getWalls2d(curPikPos, dirrection, curPiket->classifiedWalls);
+// 
+// //        std::pair<int, int> startPikets = getMinTangentAngleDifEdge(____prevWalls2dOrder, ____curWalls2dOrder);
+//         if (startPikets.first >= 0 && startPikets.second >= 0) {
+//             int bi = 0;
+//             int bj = 0;
+//             for (; bi < prevWalls2dOrder.size(); bi++)
+//                 if (prevWalls2dOrder[bi].idx == startPikets.first) break;
+//             for (; bj < curWalls2dOrder.size(); bj++)
+//                 if (curWalls2dOrder[bj].idx == startPikets.second) break;
+//             AssertReturn(bi < prevWalls2dOrder.size(), return wallPairs);  
+//             AssertReturn(bj < curWalls2dOrder.size(), return wallPairs);
+// 
+// //            debug->position(prevPiket->classifiedWalls[prevWalls2dOrder[bi].idx].pos);
+// //            debug->colour(Color::Blue);
+// //            debug->position(curPiket->classifiedWalls[curWalls2dOrder[bj].idx].pos);
+// //            bi = (prevWalls2dOrder.size() + bi + 1) % prevWalls2dOrder.size(); 
+// //            bj = (curWalls2dOrder.size() + bj - 1) % curWalls2dOrder.size();
+// 
+//             int i = bi;                                                                                                         
+//             int j = bj;
+//             int ichanged = 0;
+//             int jchanged = 0;
+// 
+//             int skipNum = debugTriangulationAlgo ? caveViewPrefs.skipNum : 0;                    
+//             int maxIterNum = prevWalls2dOrder.size() + curWalls2dOrder.size() - skipNum;
+//             do {                                                                   
+//                 int pi = (prevWalls2dOrder.size() + i - 1) % prevWalls2dOrder.size();
+//                 int pj = (curWalls2dOrder.size() + j - 1) % curWalls2dOrder.size();
+//                 int ni = (prevWalls2dOrder.size() + i + 1) % prevWalls2dOrder.size();
+//                 int nj = (curWalls2dOrder.size() + j + 1) % curWalls2dOrder.size();
+//                 
+//                 bool seelct_i;
+//                 if (ichanged == prevWalls2dOrder.size()) {
+//                     seelct_i = false;
+//                 } else if (jchanged == curWalls2dOrder.size()) { 
+//                     seelct_i = true;
+//                 } else {
+//                 
+//                     V3 a_1 = prevPiket->classifiedWalls[prevWalls2dOrder[pi].idx].pos;
+//                     V3 b_1 = curPiket->classifiedWalls[curWalls2dOrder[pj].idx].pos;   
+//                     V3 a0 = prevPiket->classifiedWalls[prevWalls2dOrder[i].idx].pos;
+//                     V3 b0 = curPiket->classifiedWalls[curWalls2dOrder[j].idx].pos;   
+//                     V3 a1 = prevPiket->classifiedWalls[prevWalls2dOrder[ni].idx].pos;
+//                     V3 b1 = curPiket->classifiedWalls[curWalls2dOrder[nj].idx].pos;
+//                     
+// //                    seelct_i = isQuadrangleATriangulationIsConvexClockwise(dirrection, a_1, b_1, a0, b0, a1, b1);
+//                     seelct_i = isQuadrangleATriangulationIsConvexClockwise(dirrection, a0, b0, a1, b1);
+//                     
+// //                    Quaternion rot = dirrection.getRotationTo(V3::UNIT_Z);
+// //                    V3 a0a1 = rot * (a1-a0);
+// //                    V3 b0b1 = rot * (b1-b0);
+// //                    V3 a_1a0 = rot * (a0-a_1);
+// //                    V3 b_1b0 = rot * (b0-b_1);
+// //                    V3 a0b0v3 = rot * (b0-a0);
+// //                    V2 a0b0(a0b0v3.x, a0b0v3.y);
+// //
+// //                    V2 prevWallDir = V2(a_1a0.x, a_1a0.y) + V2(b_1b0.x, b_1b0.y);
+// //
+// //                    if (a0b0.angleBetween(prevWallDir) < Radian(M_PI_2)) a0b0 = -a0b0;
+// //                        
+// //                    Radian aAngle = a0b0.angleTo(V2(a0a1.x, a0a1.y));
+// //                    Radian bAngle = a0b0.angleTo(V2(b0b1.x, b0b1.y));
+// //    
+// //                    seelct_i = aAngle <= bAngle;
+//     
+// //                    seelct_i = isQuadrangleATriangulationIsConvexClockwise(dirrection, a0, b0, a1, b1);
+// 
+// //                    dirrection
+// //                    V3 aNormal = (a1-a0).crossProduct(dirrection).normalisedCopy();
+// //                    V3 bNormal = (-dirrection).crossProduct(b1-b0).normalisedCopy();            
+// //
+// //                    bool res = bNormal.crossProduct(aNormal).angleBetween(b0 - a0) > Radian(M_PI_2);
+// ////                    if ((a0 - a1).angleBetween(b0 - b1) > Radian(M_PI * 3.0f / 4.0f)) {
+// ////                        res = !res;    
+// ////                    }
+// //
+// //                    Radian a0a1b0Angle = (a0 - a1).angleBetween((b0 - a1));
+// //                    Radian a0b1b0Angle = (a0 - b1).angleBetween((b0 - b1));
+// //
+// //                    if (a0a1b0Angle * 2 < a0b1b0Angle) {
+// //                        res = false;                        
+// //                    } else  if (a0b1b0Angle * 2 < a0a1b0Angle) {
+// //                        res = true;                        
+// //                    }
+// //                    if (/*prevConcaveWalls.count(ni) + */curConcaveWalls.count(nj) > 0) {
+// //                        res = !res;                    
+// //                    }
+//                     
+// //                    seelct_i = res;
+// 
+//                     
+//                     if (debugTriangulationAlgo && maxIterNum == 1 && caveViewPrefs.skipNum > 0) {  
+//                         V3 aNormal = (a1-a0).crossProduct(dirrection).normalisedCopy();
+//                         V3 bNormal = (-dirrection).crossProduct(b1-b0).normalisedCopy(); 
+//                     
+//                         debugDraw(a0, b0, Color::Green);
+//                         debugDraw(a0, a1, Color::Red + Color::Green);
+//                         debugDraw(b0, b1, Color::Blue + Color::Green);
+//                         
+//                         debugDraw(a1, b0, Color::White);
+//                         debugDraw(b1, a0, Color::White);
+//                         
+// //                        debugDraw(a_1 + V3(5, 5, 5), a1 + V3(5, 5, 5), Color::Blue + Color::Red/2 + Color::Green/2);
+// //                        debugDraw(b_1 + V3(5, 5, 5), b1 + V3(5, 5, 5), Color::Blue + Color::Red/2 + Color::Green/2);
+// 
+// //                        debugDraw(V3::ZERO, V3(a0b0.x, a0b0.y, 0), Color::Green);
+// //                        debugDraw(V3::ZERO, V3(a0a1.x, a0a1.y, 0), Color::Red + Color::Green);
+// //                        debugDraw(V3::ZERO, V3(b0b1.x, b0b1.y, 0), Color::Blue + Color::Green);
+// //
+// //                        debugDraw(a0, a0 + dirrection * 100, Color::Blue + Color::Red);
+// //                        debugDraw(b0, b0 + dirrection * 100, Color::Blue + Color::Red);
+//                         
+// //                        debugDraw(a0, a0 + aNormal * 100, Color::White);
+// //                        debugDraw(b0, b0 + bNormal * 100, Color::White);
+//                         
+//                     
+//                         V3 dir = bNormal.crossProduct(aNormal).normalisedCopy(); 
+// //                        debugDraw(a0, a0 + bNormal * 100, Color::White);
+// //                        debugDraw(a0, a0 + dir * 100, Color::White);
+// 
+//                         break;
+//                     }
+//                 }
+//                                 
+//                 const PiketWall& wi = prevPiket->classifiedWalls[prevWalls2dOrder[i].idx];  
+//                 const PiketWall& wj = curPiket->classifiedWalls[curWalls2dOrder[j].idx]; 
+//                 V3 poswi(wi.pos);
+//                 V3 poswj(wj.pos);
+//                 if (seelct_i) {              
+//                     const PiketWall& wni = prevPiket->classifiedWalls[prevWalls2dOrder[ni].idx];
+//                     wallPairs.push_back(WallTriangle(prevCol, curCol, prevCol, CONTERCLOCKWISE, wi, wj, wni));  // œŒ–ﬂƒŒ  ¬¿∆≈Õ                   
+//                     i = ni;                     
+//                     ichanged++;   
+//                 } else { 
+//                     const PiketWall& wnj = curPiket->classifiedWalls[curWalls2dOrder[nj].idx];   
+//                     wallPairs.push_back(WallTriangle(curCol, prevCol, curCol, CLOCKWISE, wj, wi, wnj)); // œŒ–ﬂƒŒ  ¬¿∆≈Õ                                       
+//                     j = nj;
+//                     jchanged++;
+//                 }                   
+//                 maxIterNum --;          
+//             } while (maxIterNum > 0);   
+//         }                    
+//     }
+//     return wallPairs;     
+// }
 
-//        debugDraw(curPiket->wallsCenter, prevPiket->wallsCenter, Color::Green+Color::Blue);
-//        debugDraw(curPiket->wallsCenter, curPikPos);            
-//        debugDraw(prevPikPos, prevPiket->wallsCenter);
-                                                                     
-        V3 prevPiketDirrection = prevPiket->dirrection;
-        if (prevPiketDirrection.angleBetween(roughDirrection) > Radian(M_PI_2)) {
-            prevPiketDirrection = -prevPiketDirrection;
-        } 
-        V3 curPiketDirrection = curPiket->dirrection;
-        if (curPiketDirrection.angleBetween(roughDirrection) > Radian(M_PI_2)) {
-            curPiketDirrection = -curPiketDirrection;                                  
-        }                     
 
-        V3 dirrection = (prevPiketDirrection + curPiketDirrection) / 2;
-        
-//        debug->position(curPikPos);
-//        debug->position(curPikPos + curPiketDirrection * 500); 
-//        
-//        debug->position(prevPikPos);
-//        debug->position(prevPikPos + prevPiketDirrection * 500);
-        
-        std::vector<WallProj> prevWalls2dOrder = getWalls2d(prevPikPos, prevPiketDirrection, dirrection, prevPiket->classifiedWalls);
-        std::vector<WallProj> curWalls2dOrder = getWalls2d(curPikPos, curPiketDirrection, dirrection, curPiket->classifiedWalls);
-
-
-
-//        std::set<int> prevConcaveWalls = getPolygonConcavePoints(prevWalls2dOrder);
-//        std::set<int> curConcaveWalls = getPolygonConcavePoints(curWalls2dOrder);
-
-//        for (int i = 0; i < curWalls2dOrder.size(); i++) {
-//            V3 p(1000, 0, 1000);
-//            debug->position(p);
-//            if (i == 0) debug->colour(Color::Red);
-//            else if (curConcaveWalls.count(i) == 1) debug->colour(Color::White);
-//            else debug->colour(Color::Blue);
-//            debug->position(p + V3(curWalls2dOrder[i].pos.x, curWalls2dOrder[i].pos.y, 0));\                  
-//        }
-//        std::set<int>::iterator it = prevConcaveWalls.begin();
-//        for (; it != prevConcaveWalls.end(); it++) {
-//            debug->position(middlePos + V3(5, 5, 0));
-//            debug->colour(Color::White);
-//            debug->position(prevPiket->classifiedWalls[prevWalls2dOrder[*it].idx].pos);
-//        }                                                                              
-//
-//        it = curConcaveWalls.begin();
-//        for (; it != curConcaveWalls.end(); it++) {
-//            debug->position(middlePos + V3(5, 5, 0));
-//            debug->colour(Color::White);
-//            debug->position(curPiket->classifiedWalls[curWalls2dOrder[*it].idx].pos);
-//        }
-        
-//        reverse(prevWalls2dOrder.begin(), prevWalls2dOrder.end());
-//        reverse(curWalls2dOrder.begin(), curWalls2dOrder.end());
-        
-        std::pair<int, int> startPikets = getMaxDistFromPointEdge(prevPiket->classifiedWalls, curPiket->classifiedWalls, middlePos);
-
-//        std::vector<WallProj> ____prevWalls2dOrder = getWalls2d(prevPikPos, dirrection, prevPiket->classifiedWalls); 
-//        std::vector<WallProj> ____curWalls2dOrder = getWalls2d(curPikPos, dirrection, curPiket->classifiedWalls);
-
-//        std::pair<int, int> startPikets = getMinTangentAngleDifEdge(____prevWalls2dOrder, ____curWalls2dOrder);
-        if (startPikets.first >= 0 && startPikets.second >= 0) {
-            int bi = 0;
-            int bj = 0;
-            for (; bi < prevWalls2dOrder.size(); bi++)
-                if (prevWalls2dOrder[bi].idx == startPikets.first) break;
-            for (; bj < curWalls2dOrder.size(); bj++)
-                if (curWalls2dOrder[bj].idx == startPikets.second) break;
-            AssertReturn(bi < prevWalls2dOrder.size(), return wallPairs);  
-            AssertReturn(bj < curWalls2dOrder.size(), return wallPairs);
-
-//            debug->position(prevPiket->classifiedWalls[prevWalls2dOrder[bi].idx].pos);
-//            debug->colour(Color::Blue);
-//            debug->position(curPiket->classifiedWalls[curWalls2dOrder[bj].idx].pos);
-//            bi = (prevWalls2dOrder.size() + bi + 1) % prevWalls2dOrder.size(); 
-//            bj = (curWalls2dOrder.size() + bj - 1) % curWalls2dOrder.size();
-
-            int i = bi;                                                                                                         
-            int j = bj;
-            int ichanged = 0;
-            int jchanged = 0;
-
-            int skipNum = debugTriangulationAlgo ? caveViewPrefs.skipNum : 0;                    
-            int maxIterNum = prevWalls2dOrder.size() + curWalls2dOrder.size() - skipNum;
-            do {                                                                   
-                int pi = (prevWalls2dOrder.size() + i - 1) % prevWalls2dOrder.size();
-                int pj = (curWalls2dOrder.size() + j - 1) % curWalls2dOrder.size();
-                int ni = (prevWalls2dOrder.size() + i + 1) % prevWalls2dOrder.size();
-                int nj = (curWalls2dOrder.size() + j + 1) % curWalls2dOrder.size();
-                
-                bool seelct_i;
-                if (ichanged == prevWalls2dOrder.size()) {
-                    seelct_i = false;
-                } else if (jchanged == curWalls2dOrder.size()) { 
-                    seelct_i = true;
-                } else {
-                
-                    V3 a_1 = prevPiket->classifiedWalls[prevWalls2dOrder[pi].idx].pos;
-                    V3 b_1 = curPiket->classifiedWalls[curWalls2dOrder[pj].idx].pos;   
-                    V3 a0 = prevPiket->classifiedWalls[prevWalls2dOrder[i].idx].pos;
-                    V3 b0 = curPiket->classifiedWalls[curWalls2dOrder[j].idx].pos;   
-                    V3 a1 = prevPiket->classifiedWalls[prevWalls2dOrder[ni].idx].pos;
-                    V3 b1 = curPiket->classifiedWalls[curWalls2dOrder[nj].idx].pos;
-                    
-//                    seelct_i = isQuadrangleATriangulationIsConvexClockwise(dirrection, a_1, b_1, a0, b0, a1, b1);
-                    seelct_i = isQuadrangleATriangulationIsConvexClockwise(dirrection, a0, b0, a1, b1);
-                    
-//                    Quaternion rot = dirrection.getRotationTo(V3::UNIT_Z);
-//                    V3 a0a1 = rot * (a1-a0);
-//                    V3 b0b1 = rot * (b1-b0);
-//                    V3 a_1a0 = rot * (a0-a_1);
-//                    V3 b_1b0 = rot * (b0-b_1);
-//                    V3 a0b0v3 = rot * (b0-a0);
-//                    V2 a0b0(a0b0v3.x, a0b0v3.y);
-//
-//                    V2 prevWallDir = V2(a_1a0.x, a_1a0.y) + V2(b_1b0.x, b_1b0.y);
-//
-//                    if (a0b0.angleBetween(prevWallDir) < Radian(M_PI_2)) a0b0 = -a0b0;
-//                        
-//                    Radian aAngle = a0b0.angleTo(V2(a0a1.x, a0a1.y));
-//                    Radian bAngle = a0b0.angleTo(V2(b0b1.x, b0b1.y));
-//    
-//                    seelct_i = aAngle <= bAngle;
-    
-//                    seelct_i = isQuadrangleATriangulationIsConvexClockwise(dirrection, a0, b0, a1, b1);
-
-//                    dirrection
-//                    V3 aNormal = (a1-a0).crossProduct(dirrection).normalisedCopy();
-//                    V3 bNormal = (-dirrection).crossProduct(b1-b0).normalisedCopy();            
-//
-//                    bool res = bNormal.crossProduct(aNormal).angleBetween(b0 - a0) > Radian(M_PI_2);
-////                    if ((a0 - a1).angleBetween(b0 - b1) > Radian(M_PI * 3.0f / 4.0f)) {
-////                        res = !res;    
-////                    }
-//
-//                    Radian a0a1b0Angle = (a0 - a1).angleBetween((b0 - a1));
-//                    Radian a0b1b0Angle = (a0 - b1).angleBetween((b0 - b1));
-//
-//                    if (a0a1b0Angle * 2 < a0b1b0Angle) {
-//                        res = false;                        
-//                    } else  if (a0b1b0Angle * 2 < a0a1b0Angle) {
-//                        res = true;                        
-//                    }
-//                    if (/*prevConcaveWalls.count(ni) + */curConcaveWalls.count(nj) > 0) {
-//                        res = !res;                    
-//                    }
-                    
-//                    seelct_i = res;
-
-                    
-                    if (debugTriangulationAlgo && maxIterNum == 1 && caveViewPrefs.skipNum > 0) {  
-                        V3 aNormal = (a1-a0).crossProduct(dirrection).normalisedCopy();
-                        V3 bNormal = (-dirrection).crossProduct(b1-b0).normalisedCopy(); 
-                    
-                        debugDraw(a0, b0, Color::Green);
-                        debugDraw(a0, a1, Color::Red + Color::Green);
-                        debugDraw(b0, b1, Color::Blue + Color::Green);
-                        
-                        debugDraw(a1, b0, Color::White);
-                        debugDraw(b1, a0, Color::White);
-                        
-//                        debugDraw(a_1 + V3(5, 5, 5), a1 + V3(5, 5, 5), Color::Blue + Color::Red/2 + Color::Green/2);
-//                        debugDraw(b_1 + V3(5, 5, 5), b1 + V3(5, 5, 5), Color::Blue + Color::Red/2 + Color::Green/2);
-
-//                        debugDraw(V3::ZERO, V3(a0b0.x, a0b0.y, 0), Color::Green);
-//                        debugDraw(V3::ZERO, V3(a0a1.x, a0a1.y, 0), Color::Red + Color::Green);
-//                        debugDraw(V3::ZERO, V3(b0b1.x, b0b1.y, 0), Color::Blue + Color::Green);
-//
-//                        debugDraw(a0, a0 + dirrection * 100, Color::Blue + Color::Red);
-//                        debugDraw(b0, b0 + dirrection * 100, Color::Blue + Color::Red);
-                        
-//                        debugDraw(a0, a0 + aNormal * 100, Color::White);
-//                        debugDraw(b0, b0 + bNormal * 100, Color::White);
-                        
-                    
-                        V3 dir = bNormal.crossProduct(aNormal).normalisedCopy(); 
-//                        debugDraw(a0, a0 + bNormal * 100, Color::White);
-//                        debugDraw(a0, a0 + dir * 100, Color::White);
-
-                        break;
-                    }
-                }
-                                
-                const PiketWall& wi = prevPiket->classifiedWalls[prevWalls2dOrder[i].idx];  
-                const PiketWall& wj = curPiket->classifiedWalls[curWalls2dOrder[j].idx]; 
-                V3 poswi(wi.pos);
-                V3 poswj(wj.pos);
-                if (seelct_i) {              
-                    const PiketWall& wni = prevPiket->classifiedWalls[prevWalls2dOrder[ni].idx];
-                    wallPairs.push_back(WallTriangle(prevCol, curCol, prevCol, CONTERCLOCKWISE, wi, wj, wni));  // œŒ–ﬂƒŒ  ¬¿∆≈Õ                   
-                    i = ni;                     
-                    ichanged++;   
-                } else { 
-                    const PiketWall& wnj = curPiket->classifiedWalls[curWalls2dOrder[nj].idx];   
-                    wallPairs.push_back(WallTriangle(curCol, prevCol, curCol, CLOCKWISE, wj, wi, wnj)); // œŒ–ﬂƒŒ  ¬¿∆≈Õ                                       
-                    j = nj;
-                    jchanged++;
-                }                   
-                maxIterNum --;          
-            } while (maxIterNum > 0);   
-        }                    
-    }
-    return wallPairs;     
-}
-
-
-WallTriangles Cave::buildWallSegmentCenterMode(const Piket* prevPiket, const Piket* curPiket) {
-    WallTriangles wallPairs;
-    AssertReturn(prevPiket && curPiket, return wallPairs);
-    if (!prevPiket->classifiedWalls.empty() && !curPiket->classifiedWalls.empty()) {
-        
-        Color prevCol = getColorForPiket(prevPiket);
-        Color curCol = caveViewPrefs.wallColoringMode == WCM_ROUGE ? prevCol : getColorForPiket(curPiket);
-                                  
-        V3 curPikPos = (curPiket->wallsCenter + curPiket->pos)/2;
-        V3 prevPikPos = (prevPiket->wallsCenter + curPiket->pos)/2;
-        V3 dirrection = curPikPos - prevPikPos;
-
-        std::vector<std::vector<WallProj> > rotWalls(2);
-        
-        rotWalls[0] = getWalls2d(prevPikPos, dirrection, dirrection, prevPiket->classifiedWalls); 
-        rotWalls[1] = getWalls2d(prevPikPos, dirrection, dirrection, curPiket->classifiedWalls);
-        
-        int bi = 0; 
-        int bj = WallProj:: minSelf0XAngleWallPoint(rotWalls[0][bi], rotWalls[1], true, -1);
-        Radian angleBiToBj = rotWalls[0][bi].posBySelfDir.angleTo(rotWalls[1][bj].posBySelfDir);
-        Radian angleBjToBi = rotWalls[1][bj].posBySelfDir.angleTo(rotWalls[0][bi].posBySelfDir);
-        bool iLessThanj = angleBiToBj <= angleBjToBi;
-                     
-        int i = bi;                                                                                                         
-        int j = bj;
-        int ichanged = 0;
-        int jchanged = 0;
-        int maxIterNum = rotWalls[0].size() + rotWalls[1].size();
-        do {
-            Radian iAngle = rotWalls[0][i].to0XAngleBySelfDir; 
-            Radian jAngle = rotWalls[1][j].to0XAngleBySelfDir;
-            if (iAngle <= jAngle != iLessThanj) {
-                if (iAngle > jAngle) jAngle += Radian(2 * M_PI);
-                else iAngle += Radian(2 * M_PI);
-            }
-
-            int ni = (i + 1) % rotWalls[0].size();
-            int nj = (j + 1) % rotWalls[1].size();
-
-            Radian niAngle = rotWalls[0][ni].to0XAngleBySelfDir; 
-            Radian njAngle = rotWalls[1][nj].to0XAngleBySelfDir;
-
-            while (niAngle < iAngle) niAngle += Radian(2 * M_PI);
-            while (njAngle < jAngle) njAngle += Radian(2 * M_PI);
-
-            bool seelct_i;
-            if (ichanged == rotWalls[0].size()) {
-                seelct_i = false;
-            } else if (jchanged == rotWalls[1].size()) { 
-                seelct_i = true;
-            } else if (iLessThanj && niAngle < jAngle) {
-                seelct_i = true;
-            } else if (!iLessThanj && njAngle < iAngle) {
-                seelct_i = false;
-            } else {
-                seelct_i = niAngle < njAngle;
-            }
-                
-            if (seelct_i)  iLessThanj = niAngle <= jAngle;
-            else  iLessThanj = iAngle <= njAngle;
-                
-            const PiketWall& wi = prevPiket->classifiedWalls[rotWalls[0][i].idx];  
-            const PiketWall& wj = curPiket->classifiedWalls[rotWalls[1][j].idx]; 
-            V3 poswi(wi.pos);
-            V3 poswj(wj.pos);
-            if (seelct_i) {
-                const PiketWall& wni = prevPiket->classifiedWalls[rotWalls[0][ni].idx];   
-                wallPairs.push_back(WallTriangle(prevCol, curCol, prevCol, CONTERCLOCKWISE, wi, wj, wni));  // œŒ–ﬂƒŒ  ¬¿∆≈Õ                   
-                i = ni;                     
-                ichanged++;   
-            } else { 
-                const PiketWall& wnj = curPiket->classifiedWalls[rotWalls[1][nj].idx];    
-                wallPairs.push_back(WallTriangle(curCol, prevCol, curCol, CLOCKWISE, wj, wi, wnj)); // œŒ–ﬂƒŒ  ¬¿∆≈Õ                                       
-                j = nj;
-                jchanged++;
-            }                   
-            maxIterNum --;
-            if (maxIterNum < 0 ) {
-                break;
-            }
-        } while ((bi != i || bj != j));            
-    }
-    
-    return wallPairs;
-}const Color& Cave::getColorForEdge(const Piket* from, const Piket* to) {
+// WallTriangles Cave::buildWallSegmentCenterMode(const Piket* prevPiket, const Piket* curPiket) {
+//     WallTriangles wallPairs;
+//     AssertReturn(prevPiket && curPiket, return wallPairs);
+//     if (!prevPiket->classifiedWalls.empty() && !curPiket->classifiedWalls.empty()) {
+//         
+//         Color prevCol = getColorForPiket(prevPiket);
+//         Color curCol = caveViewPrefs.wallColoringMode == WCM_ROUGE ? prevCol : getColorForPiket(curPiket);
+//                                   
+//         V3 curPikPos = (curPiket->wallsCenter + curPiket->pos)/2;
+//         V3 prevPikPos = (prevPiket->wallsCenter + curPiket->pos)/2;
+//         V3 dirrection = curPikPos - prevPikPos;
+// 
+//         std::vector<std::vector<WallProj> > rotWalls(2);
+//         
+//         rotWalls[0] = getWalls2d(prevPikPos, dirrection, dirrection, prevPiket->classifiedWalls); 
+//         rotWalls[1] = getWalls2d(prevPikPos, dirrection, dirrection, curPiket->classifiedWalls);
+//         
+//         int bi = 0; 
+//         int bj = WallProj:: minSelf0XAngleWallPoint(rotWalls[0][bi], rotWalls[1], true, -1);
+//         Radian angleBiToBj = rotWalls[0][bi].posBySelfDir.angleTo(rotWalls[1][bj].posBySelfDir);
+//         Radian angleBjToBi = rotWalls[1][bj].posBySelfDir.angleTo(rotWalls[0][bi].posBySelfDir);
+//         bool iLessThanj = angleBiToBj <= angleBjToBi;
+//                      
+//         int i = bi;                                                                                                         
+//         int j = bj;
+//         int ichanged = 0;
+//         int jchanged = 0;
+//         int maxIterNum = rotWalls[0].size() + rotWalls[1].size();
+//         do {
+//             Radian iAngle = rotWalls[0][i].to0XAngleBySelfDir; 
+//             Radian jAngle = rotWalls[1][j].to0XAngleBySelfDir;
+//             if (iAngle <= jAngle != iLessThanj) {
+//                 if (iAngle > jAngle) jAngle += Radian(2 * M_PI);
+//                 else iAngle += Radian(2 * M_PI);
+//             }
+// 
+//             int ni = (i + 1) % rotWalls[0].size();
+//             int nj = (j + 1) % rotWalls[1].size();
+// 
+//             Radian niAngle = rotWalls[0][ni].to0XAngleBySelfDir; 
+//             Radian njAngle = rotWalls[1][nj].to0XAngleBySelfDir;
+// 
+//             while (niAngle < iAngle) niAngle += Radian(2 * M_PI);
+//             while (njAngle < jAngle) njAngle += Radian(2 * M_PI);
+// 
+//             bool seelct_i;
+//             if (ichanged == rotWalls[0].size()) {
+//                 seelct_i = false;
+//             } else if (jchanged == rotWalls[1].size()) { 
+//                 seelct_i = true;
+//             } else if (iLessThanj && niAngle < jAngle) {
+//                 seelct_i = true;
+//             } else if (!iLessThanj && njAngle < iAngle) {
+//                 seelct_i = false;
+//             } else {
+//                 seelct_i = niAngle < njAngle;
+//             }
+//                 
+//             if (seelct_i)  iLessThanj = niAngle <= jAngle;
+//             else  iLessThanj = iAngle <= njAngle;
+//                 
+//             const PiketWall& wi = prevPiket->classifiedWalls[rotWalls[0][i].idx];  
+//             const PiketWall& wj = curPiket->classifiedWalls[rotWalls[1][j].idx]; 
+//             V3 poswi(wi.pos);
+//             V3 poswj(wj.pos);
+//             if (seelct_i) {
+//                 const PiketWall& wni = prevPiket->classifiedWalls[rotWalls[0][ni].idx];   
+//                 wallPairs.push_back(WallTriangle(prevCol, curCol, prevCol, CONTERCLOCKWISE, wi, wj, wni));  // œŒ–ﬂƒŒ  ¬¿∆≈Õ                   
+//                 i = ni;                     
+//                 ichanged++;   
+//             } else { 
+//                 const PiketWall& wnj = curPiket->classifiedWalls[rotWalls[1][nj].idx];    
+//                 wallPairs.push_back(WallTriangle(curCol, prevCol, curCol, CLOCKWISE, wj, wi, wnj)); // œŒ–ﬂƒŒ  ¬¿∆≈Õ                                       
+//                 j = nj;
+//                 jchanged++;
+//             }                   
+//             maxIterNum --;
+//             if (maxIterNum < 0 ) {
+//                 break;
+//             }
+//         } while ((bi != i || bj != j));            
+//     }
+//     
+//     return wallPairs;
+//
+const Color& Cave::getColorForEdge(const Piket* from, const Piket* to) const {
 	auto key = make_pair(std::min(from->id, to->id), std::max(from->id, to->id));
 	auto edgeIt = edges.find(key);
 	if (edgeIt != edges.end()) return edgeIt->second.col;
 	else return Color::None;
 }
 
-Color Cave::getColorForPiketByEdges(const Piket* piket) {
+Color Cave::getColorForPiketByEdges(const Piket* piket) const {
 	int num = 0;
 	Color res = Color::None;
 	for (const Piket* adjPiket : piket->adjPikets) {
@@ -1922,7 +1942,7 @@ Color Cave::getColorForPiketByEdges(const Piket* piket) {
 	return res;
 }
 
-Color Cave::getColorForPiket(const Piket* piket) {
+Color Cave::getColorForPiket(const Piket* piket) const {
     if (caveViewPrefs.wallColoringMode == WCM_ROUGE || caveViewPrefs.wallColoringMode == WCM_SMOOTH) {
         Color col = piket->getPrevailWallColor() * colourMult;
 		if (col.r + col.g + col.b == 0) {
@@ -1931,11 +1951,7 @@ Color Cave::getColorForPiket(const Piket* piket) {
         col.a = 1.0f;
         return col;
     } else if (caveViewPrefs.wallColoringMode == WCM_TIGHTNESS_SMOOTH) {
-        float maxDim = piket->getMaxDimension();
-//        std::vector<WallProj> wallsProj = 
-        float square = polySquare(getWalls2d(piket->wallsCenter, piket->dirrection, piket->dirrection, piket->classifiedWalls));
-        float minDim = 0;
-        if (maxDim > 0) minDim = square / maxDim / (M_PI * 0.9) * 4; 
+		float minDim = piket->getMinCutDimension();
         
         static std::vector<std::pair<float, Color> > colors;
         if (colors.empty()) {      
@@ -2111,8 +2127,14 @@ std::string Cave::getWallMaterial() {
 //    return result;
 //}
 
-const Piket* Cave::getPiket(int id) {
-    return getPiketMut(id);
+const Piket* Cave::getPiket(int id) const {
+	const Piket* result = NULL;
+	unordered_map<int, Piket>::const_iterator fndRes = pikets.find(id);
+	if (fndRes != pikets.end()) {
+		result = &fndRes->second;
+	}
+
+	return result;
 }
 
 Piket* Cave::getPiketMut(int id) {
@@ -2246,7 +2268,7 @@ void Cave::debugDraw(V3 a, V3 b, Color col) {
 }
 
 
-void Cave::addOutputPoly(OuputType type, V3 a, V3 b, V3 c, V3 an, V3 bn, V3 cn, const Color& ca, const Color& cb, const Color& cc) {
+void Cave::addOutputPoly(OutputType type, V3 a, V3 b, V3 c, V3 an, V3 bn, V3 cn, const Color& ca, const Color& cb, const Color& cc) {
 	OutputPoly poly;
 	poly.a = a;
 	poly.an = an;
@@ -2260,7 +2282,7 @@ void Cave::addOutputPoly(OuputType type, V3 a, V3 b, V3 c, V3 an, V3 bn, V3 cn, 
 	outputPoly[type].push_back(poly);
 }
 
-void Cave::addOutputPoly(OuputType type, V3 a, V3 b, V3 c, const Color& col) {
+void Cave::addOutputPoly(OutputType type, V3 a, V3 b, V3 c, const Color& col) {
 	OutputPoly poly;
 	poly.a = a;
 	poly.an = V3(0, 0, 0);
@@ -2274,7 +2296,7 @@ void Cave::addOutputPoly(OuputType type, V3 a, V3 b, V3 c, const Color& col) {
 	outputPoly[type].push_back(poly);
 }
 
-void Cave::addOutputLine(OuputType type, V3 a, V3 b, const Color& ca, const Color& cb) {
+void Cave::addOutputLine(OutputType type, V3 a, V3 b, const Color& ca, const Color& cb) {
 	OutputLine poly;
 	poly.a = a;
 	poly.b = b;
@@ -2283,7 +2305,7 @@ void Cave::addOutputLine(OuputType type, V3 a, V3 b, const Color& ca, const Colo
 	outputLines[type].push_back(poly);
 }
 
-void Cave::addOutputLine(OuputType type, V3 a, V3 b, const Color& c) {
+void Cave::addOutputLine(OutputType type, V3 a, V3 b, const Color& c) {
 	addOutputLine(type, a, b, c, c);
 }
 
@@ -2306,7 +2328,7 @@ std::vector<const Piket*> Cave::getZSurveyEdges(const Piket* from) const
 	return res;
 }
 
-void Cave::resetOutput(OuputType type) {
+void Cave::resetOutput(OutputType type) {
 	outputPoly[type].clear();
 	outputLines[type].clear();
 }

@@ -252,15 +252,16 @@ inline Color operator* (float f, const Color& c) {
 	return c*f;
 }
 
-enum OuputType {
-	OT_UNKNOW,
-	OT_THREAD,
-	OT_WALL,
-	OT_WALL_CUTS,
-	OT_DEBUG,
-    OT_DEBUG2,
-	OT_BOX,
-	OT_OUTLINE,
+enum OutputType {
+	OT_UNKNOW = 0,
+	OT_THREAD = 1,
+	OT_WALL = 2,
+	OT_WALL_CUTS = 4,
+	OT_DEBUG = 8,
+    OT_DEBUG2 = 16,
+	OT_BOX = 32,
+	OT_OUTLINE = 64,
+	OT_OUTLINE_CUT = 128,
 };
 
 struct OutputPoly {
