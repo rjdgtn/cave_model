@@ -64,6 +64,8 @@ protected:
 
     void updateWallsSurrfaceMode(); // показать / скрыть граф.объекты в соответствии с настройками 
 
+	void invalidatePrebuild() { prebuildInvalidated = true;  };
+
     // добавляет стены в пикеты без стен на основе крайних пикетов со стенами
     // вызывает genPiketsFakeWallsСhainSearch для всех известных пикетов со стенами                                
     void genPiketsFakeWalls(FakeWallsMode mode); 

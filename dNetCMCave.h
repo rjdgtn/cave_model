@@ -63,16 +63,16 @@ namespace DotNetCaveModel{
 	};
 	
 	public enum class DMOuputType {
-		OT_UNKNOW,
-		OT_THREAD,
-		OT_WALL,
-		OT_WALL_CUTS,
-		OT_DEBUG,
-		OT_DEBUG2,
-		OT_BOX,
-		OT_OUTLINE,
-		OT_OUTLINE_CUT,
-		OT_NUM
+		OT_UNKNOW = 0,
+		OT_THREAD = 1,
+		OT_WALL = 2,
+		OT_WALL_CUTS = 4,
+		OT_DEBUG = 8,
+		OT_DEBUG2 = 16,
+		OT_BOX = 32,
+		OT_OUTLINE = 64,
+		OT_OUTLINE_CUT = 128,
+		OT_NUM = 256
 	};
 
 	public ref struct DNOutputPoly {
