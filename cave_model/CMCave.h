@@ -36,7 +36,6 @@ protected:
 	
     void buildFakeZSurveyPikets(); // обрабатывает зигзаговую съемку создавая дополнительные пикеты 
 	void prebuildPikets(); // prepare pikets for build walls and oultine
-    void buildEquatesMap();
 	void buildWallsObject(); // заполняет графический объект стен               
     // триангулирует поверхность стен между двумя пикетами методом указанном в настройках
 	WallTriangles buildWallSegment(const Piket* piket, const Piket* nextPiket);
@@ -82,20 +81,13 @@ protected:
 
     
     // функции построения графа
-//    const P3D* getP3D(int id) const;
-//    const P3D* getP3DbyMet(int met) const;
     Piket* getPiketMut(int id);
     const Piket* getPiket(int id) const;
-//    int getPiketId(const P3D* p3d, int met) const;
-//    int getPiketId(const P3D* p3d) const;
-//    int getPiketId(int met) const;
-//    const std::string& getPiketLabel(int met);
 
     void logPikets();
     
 	// функции раскраски стен
     std::string getWallMaterial();            
-//    const Color& getThreadColour(int color, P3DPriz priz = PRIZ_NONE) const;
 
     // рассчет ближайшей по углу точки из списка
     static int minAngleWallPoint(V2 point, const std::vector<V2>& rotWalls, bool abs, int skipPoint);

@@ -214,6 +214,16 @@ namespace DotNetCaveModel {
 		return res;
 	}
 
+	List<DNCrossPiketLineBesier3^>^ DNetCMCave::calcOutineBesier()
+	{
+		const auto& outlineBezier = cmCave->calcOutineBesier();
+		List<DNCrossPiketLineBesier3^>^ res = gcnew List<DNCrossPiketLineBesier3^>(outlineBezier.size());
+		for (const auto& line : outlineBezier) {
+			res->Add(gcnew DNCrossPiketLineBesier3(line));
+		}
+		return res;
+	}
+
 	bool DNetCMCave::isOutputEnabled(DMOuputType type)
 	{
 		return cmCave->isOutputEnabled((OutputType)type);
@@ -233,12 +243,19 @@ namespace DotNetCaveModel {
 
 	DMOutputLine::DMOutputLine(const CM::OutputLine line)
 	{
-		List<DMOutputLine^>^ arr = gcnew List<DMOutputLine^>(100);
-
 		vertice = gcnew array<float, 2>{ {line.a.x, line.a.y, line.a.z}, { line.b.x, line.b.y, line.b.z } };
 		color = gcnew array<float, 2> { {line.ca.r, line.ca.g, line.ca.b, line.ca.a}, { line.cb.r, line.cb.g, line.cb.b, line.cb.a } };
 	}
 
+	DNCrossPiketLineBesier3::DNCrossPiketLineBesier3(const CM::CrossPiketLineBesier3 line)
+	{
+		aid = line.aid;
+		bid = line.bid;
 
+		points = gcnew array<float, 2>{ { line.a.x, line.a.y, line.a.z }, 
+										{ line.ac.x, line.ac.y, line.ac.z }, 
+										{ line.bc.x, line.bc.y, line.bc.z }, 
+										{ line.b.x, line.b.y, line.b.z } };
+	}
 
 }

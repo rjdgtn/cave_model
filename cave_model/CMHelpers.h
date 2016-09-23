@@ -166,41 +166,6 @@ struct ExtWallProj: public WallProj {
 };
 
 
-struct LineBesier3 {
-	// 	LineBesier3(int aid, int bid, V3 a, V3 ac, V3 bc, V3 b):
-	// 		aid(aid),
-	// 		bid(bid),
-	// 		a(a),
-	// 		ac(ac),
-	// 		bc(bc),
-	// 		b(b) { }
-
-	LineBesier3() :
-		a(0, 0, 0),
-		ac(0, 0, 0),
-		bc(0, 0, 0),
-		b(0, 0, 0) { }
-
-	V3 a;
-	V3 ac;
-	V3 bc;
-	V3 b;
-};
-
-struct CrossPiketLineBesier3 : public LineBesier3 {
-	CrossPiketLineBesier3(int aid, int bid, const LineBesier3& b) :
-		LineBesier3(b),
-		aid(aid),
-		bid(bid) { }
-	CrossPiketLineBesier3() :
-		aid(0),
-		bid(0) { }
-
-	int aid;
-	int bid;
-};
-
-
 // возврадает отсортированные по углу вокруг оси selfDirrection проходящей чере center
 // вершины двумерного многоугольника - проекции
 // стен пикета на плоскость с нормалью selfDirrection и центром center

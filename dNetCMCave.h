@@ -87,6 +87,12 @@ namespace DotNetCaveModel{
 		array<float, 2>^ color; // { {ar, ag, ab, aa}, { br, bg, bb, ba } };
 	};
 
+	public ref struct DNCrossPiketLineBesier3 {
+		DNCrossPiketLineBesier3(const CM::CrossPiketLineBesier3 line);
+		int aid;
+		int bid;
+		array<float, 2>^ points; // { {ax, ay, az}, { acx, acy, acz }, { bcx, bcy, bcz }, {bx, by, bz} };
+	};
 
 	public ref class DNetCMCave {
 	public:
@@ -112,6 +118,8 @@ namespace DotNetCaveModel{
 
 		List<DNOutputPoly^>^ getOutputPoly(DMOuputType type);
 		List<DMOutputLine^>^ getOutputLine(DMOuputType type);
+		List<DNCrossPiketLineBesier3^>^ calcOutineBesier();
+		
 		bool isOutputEnabled(DMOuputType type);
 
 	protected:
