@@ -49,6 +49,8 @@ void Piket::addW3D(long long parentPiket, const Wall w3d) {
 }
 
 void Piket::preProcessWalls(const CaveViewPrefs& caveViewPrefs) {
+	pos = origPos;
+
     classifyWalls();
     recalcPosCenterDirrection();
 
@@ -93,26 +95,35 @@ void Piket::updateWallsCenter() {
 }
 
 void Piket::updateDirrection() {
+	V3 sampleDirrection = V3::ZERO;
     dirrection = V3::ZERO;
 
     if (adjPikets.size() >= 1 && adjPikets.size() <= 2) {
-		dirrection += (adjPikets.front()->pos - pos).normalisedCopy();
+		sampleDirrection += (adjPikets.front()->pos - pos).normalisedCopy();
     }
     if (adjPikets.size() == 2) {
-		dirrection += (pos - adjPikets.back()->pos).normalisedCopy();
+		sampleDirrection += (pos - adjPikets.back()->pos).normalisedCopy();
     }
-
+	cerr << "walls :" << classifiedWalls.size() << "\n";
     for (int i = 0; i < classifiedWalls.size(); i++) {
-        for (int j = i + 1; j < classifiedWalls.size(); j++) {
-            V3 ish = (classifiedWalls[i].pos - piketEffectivePos);
-            V3 jsh = (classifiedWalls[j].pos - piketEffectivePos);
+		for (int j = i + 1; j < classifiedWalls.size(); j++) {
+			cerr << i << " - " << j << "\n";
+            V3 ish = (classifiedWalls[i].pos - pos);
+            V3 jsh = (classifiedWalls[j].pos - pos);
+			float interangle = ish.angleBetween(jsh).valueRadians();
+			if (interangle > M_PI - M_PI / 8 || interangle < M_PI / 8) continue;
             V3 norm = ish.crossProduct(jsh);
-            norm.normalise();
+			norm.normalise();
 
-            if (!dirrection.isZeroLength() && norm.angleBetween(dirrection) > Radian(M_PI_2)) {
+            if (!sampleDirrection.isZeroLength() && norm.angleBetween(sampleDirrection) > Radian(M_PI_2)) {
                 norm = -norm;
             }
-            dirrection += norm;
+			sampleDirrection += norm;
+			dirrection += norm;
+// 			cerr << "i :" << ish.x << " " << ish.y << " " << ish.z << "\n";
+// 			cerr << "j :" << jsh.x << " " << jsh.y << " " << jsh.z << "\n";
+// 			cerr << "n :" << norm.x << " " << norm.y << " " << norm.z << "\n";
+// 			cerr << "d :" << dirrection.x << " " << dirrection.y << " " << dirrection.z << "\n";
         }
     }
     dirrection.normalise();
@@ -361,6 +372,59 @@ void Piket::addFakeWall(const PiketWall& wall) {
 	resetCache();
 }
 
+void Piket::convertToExtendedInclination()
+{
+	AssertReturn(!allP3D.empty(), return);
+	V3 oldPos = pos;
+	pos.x = getExtendedInclinationX();
+	pos.y = 0;
+	
+	float minAngle = M_PI * 2;
+	const Piket* minAnglePiket = NULL;
+	for (int i = 0; i < adjPikets.size(); i++) {
+		const Piket* adjPik = adjPikets[i];
+		if (adjPik) {
+			V3 vecToPik = (adjPik->origPos - pos).normalisedCopy();
+			float angle = dirrection.angleBetween(vecToPik).valueRadians();
+			if (angle < minAngle) {
+				minAngle = angle;
+				minAnglePiket = adjPik;
+			}
+		}
+	}
+
+	bool rotateForward = true;
+	if (minAnglePiket && minAnglePiket->getExtendedInclinationX() < getExtendedInclinationX()) {
+		rotateForward = false;
+	}
+
+	Radian rot = dirrection.angleBetween(V3(dirrection.x, dirrection.y, 0));
+	Quaternion dirRotQuat;
+	dirRotQuat.FromAngleAxis(-rot, V3::UNIT_Y);
+	
+	V3 newDirrection = dirRotQuat * V3(rotateForward ? 1 : -1, 0, 0);
+	
+ 	Quaternion rotQuat = dirrection.getRotationTo(newDirrection);
+	dirrection = newDirrection;
+
+	for (int i = 0; i < classifiedWalls.size(); i++) {
+		PiketWall& wall = classifiedWalls[i];
+		V3 relPos = wall.pos - oldPos;
+		relPos = rotQuat * relPos;
+		wall.pos = relPos + pos;
+	}
+
+	//for (int i = 0; i < allWalls.size(); i++) {
+	//	Wall& wall = allWalls[i];
+	//	V3 relPos = wall.pos - oldPos;
+	//	relPos = rot * relPos;
+	//	wall.pos = relPos + pos;
+	//}
+
+	updateEffectivePos();
+	updateWallsCenter();
+}
+
 bool Piket::isInactive() const {
 	return !hasNoPriz(MARK_Z_SURVEY);
 }
@@ -576,6 +640,12 @@ float Piket::getMinCutDimension() const {
 		cache.setMinCutDimension(minDim);
 		return minDim;
 	}
+}
+
+float Piket::getExtendedInclinationX() const
+{
+	AssertReturn(!allP3D.empty(), return 0;);
+	return allP3D.front().extendedInclinationX;
 }
 
 void PiketCache::addWalls2d(V3 dirrection, std::vector<WallProj> w2d) {

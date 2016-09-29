@@ -45,6 +45,7 @@ namespace DotNetCaveModel{
 		float x {0};
 		float y {0};
 		float z {0};
+		float extendedInclinationX{ 0 };
 		float r {0};
 		float g {0};
 		float b {0};
@@ -63,7 +64,8 @@ namespace DotNetCaveModel{
 	};
 	
 	public enum class DMOuputType {
-		OT_UNKNOW = 0,
+		OT_UNKNOWN = 0,
+		OT_NONE = 0,
 		OT_THREAD = 1,
 		OT_WALL = 2,
 		OT_WALL_CUTS = 4,
@@ -104,6 +106,7 @@ namespace DotNetCaveModel{
 		bool setColoringMode(ColoringMode mode, bool grayscale);
 		bool setColoringMode(ColoringMode mode);
 		bool setLookDirection(float x, float y, float z);
+		void setShouldConvertToExtendedInclination(bool x);
 		
 		void addVertice(DNPiketInfo^ piketInfo, int equatesVerticeId);
 		void addVertice(DNPiketInfo^ piketInfo);

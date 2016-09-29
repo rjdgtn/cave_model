@@ -78,7 +78,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)\cave_model;$(ProjectDir)\cave_model\common;$(ProjecctDir)\cave_model\format;$(ProjectDir)\cave_model\ogre\;$(ProjectDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\cave_model;$(ProjectDir)\cave_model\common;$(ProjectDir)\cave_model\format;$(ProjectDir)\cave_model\ogre\;$(ProjectDir)\cave_model\wykobi;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

@@ -17,6 +17,7 @@ public:
 
 	void reset();
 
+
 	const std::vector<WallProj>* getWalls2d(V3 dirrection) const;
 	const std::vector<WallProj>* getWalls2dWithConvexCorrection(V3 dirrection) const;
 	void addWalls2d(V3 dirrection, std::vector<WallProj> walls2d);
@@ -27,7 +28,7 @@ public:
 
 	const std::vector<LineBesier3>* getCutBezier3() const { return cutBezier3; }
 	void setCutBezier3(const std::vector<LineBesier3>& c) { delete cutBezier3; cutBezier3 = new std::vector<LineBesier3>(c); }
-
+	
 protected:
 	std::vector<Walls2dCache> walls2d;
 	std::vector<Walls2dCache> walls2dWithConvexCorrection;
@@ -40,6 +41,7 @@ public:
 	Piket(PiketInfo info/*V3 pos*/) :
 	id(info.id),
 	pos(info.pos),
+	origPos(info.pos),
 	wallsCenter(0, 0, 0),
 	//wallsMassCenter(0, 0, 0),
 	piketEffectivePos(0, 0, 0),
@@ -54,6 +56,8 @@ public:
 	void addP3D(const PiketInfo& piket);
 	void addW3D(long long parentPiket, const Wall w3d);
 	void addFakeWall(const PiketWall& wall);
+
+	void convertToExtendedInclination();
 
 	// ְֲֵָָּֽֽ
     // hasPriz(priz) != !hasNoPriz(priz) ג מבשול סכףקאו !!!
@@ -87,6 +91,7 @@ public:
 	std::vector<ExtWallProj> getExtWalls2dWithConvexCorrection(V3 sortDirrection, V3 addinDirrection) const;
 
 	float getMinCutDimension() const;
+	float getExtendedInclinationX() const;
 
 protected:
     void processPiketPosAsWall();
@@ -105,6 +110,7 @@ protected:
 public:
 	int id;
 	V3 pos;
+	V3 origPos; // non processed pos
 	std::vector<const Piket*> adjPikets;
 	std::vector<const Piket*> adjFakePikets;
 	std::vector<Wall> allWalls;

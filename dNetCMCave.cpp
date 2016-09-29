@@ -22,7 +22,6 @@ namespace DotNetCaveModel {
 	}
 
 
-
 	DNetCMCave::~DNetCMCave()
 	{
 		delete cmCave;
@@ -63,6 +62,11 @@ namespace DotNetCaveModel {
 		caveViewPrefs->lookDirrection.z = z;
 		caveViewPrefs->lookDirrection.normalise();
 		return cmCave->setCaveViewPrefs(*caveViewPrefs);
+	}
+
+	void DNetCMCave::setShouldConvertToExtendedInclination(bool x)
+	{
+		cmCave->setShouldConvertToExtendedInclination(x);
 	}
 
 	bool DNetCMCave::setColoringMode(ColoringMode mode, bool grayscale)
@@ -128,6 +132,7 @@ namespace DotNetCaveModel {
 		caveViewPrefs->wallsSurfaceMode = CM::WSFM_NONE;
 		caveViewPrefs->wallsTrianglesBlowMode = CM::WTBM_NONE;
 		caveViewPrefs->wallsTrianglesBlowStrength = CM::WTBS_LOW;
+		caveViewPrefs->showThread = true;
 		caveViewPrefs->showSections = false;
 		caveViewPrefs->showWallLines = true;
 		caveViewPrefs->showOutline = true;
@@ -142,6 +147,7 @@ namespace DotNetCaveModel {
 		temp = label;
 		res.label = marshal_as< std::string>(temp);
 		res.pos = V3(x, y, z);
+		res.extendedInclinationX = extendedInclinationX;
 		res.col = Color(r, g, b);
 		res.priz = (PiketMark)priz;
 		//res.hasWalls = hasWalls;
