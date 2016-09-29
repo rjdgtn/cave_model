@@ -814,7 +814,6 @@ void Cave::buildOutlineCut() {
 	prebuildPikets();
 
 	std::vector<CrossPiketLineBesier3> outlineCutsBezier;
-	outlineCutsBezier.reserve(pikets.size() * 4);
 
 	unordered_map<const Piket*, std::vector<const Piket*> > buildWalls;
 	std::tr1::unordered_map<int, Piket>::const_iterator it = pikets.begin();

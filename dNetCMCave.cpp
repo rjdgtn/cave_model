@@ -18,7 +18,7 @@ namespace DotNetCaveModel {
 
 		cmCave = new Cave();
 		caveViewPrefs = new CaveViewPrefs();
-		//caveViewPrefs->showDebug = true;
+		//	caveViewPrefs->showDebug = true;
 	}
 
 
