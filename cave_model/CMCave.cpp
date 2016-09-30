@@ -25,7 +25,7 @@ using namespace wykobi;
 Cave::Cave():
 debugTriangulationAlgo(false),
 wasInited(false),
-shouldConvertToExtendedInclination(false),
+shouldConvertToExtendedElevation(false),
 colourMult(1.0f),
 prebuildInvalidated(true) {
 
@@ -34,7 +34,7 @@ prebuildInvalidated(true) {
 void Cave::finishInit(OutputType enabledToGenerateOutput) {
 	enabledToGenerate = enabledToGenerateOutput;
 
-	if (!shouldConvertToExtendedInclination) buildFakeZSurveyPikets();
+	if (!shouldConvertToExtendedElevation) buildFakeZSurveyPikets();
 
 	prebuildPikets();
 	
@@ -50,15 +50,13 @@ void Cave::finishInit(OutputType enabledToGenerateOutput) {
     wasInited = true;
 }
 
-void Cave::convertToExtendedInclination() {
+void Cave::convertToExtendedElevation() {
 	AssertReturn(!wasInited, return;);
 
 	std::tr1::unordered_map<int, Piket>::iterator pikiIt;
 	for (pikiIt = pikets.begin(); pikiIt != pikets.end(); pikiIt++) {
-		pikiIt->second.convertToExtendedInclination();
+		pikiIt->second.convertToExtendedElevation();
 	}
-
-//	invalidatePrebuild();
 }
 
 std::vector<CM::CrossPiketLineBesier3> Cave::calcOutineBesier() const {
@@ -619,9 +617,9 @@ void Cave::addWall(const Wall& wall, int linkToVerticeId, int parentPiketId) {
 	}
 }
 
-void Cave::setShouldConvertToExtendedInclination(bool convert) {
-	AssertReturn(!wasInited, LOG("fail to set shouldConvertToExtendedInclination: cave already finish initialisation "); return;);
-	shouldConvertToExtendedInclination = convert;
+void Cave::setShouldConvertToExtendedElevation(bool convert) {
+	AssertReturn(!wasInited, LOG("fail to set shouldConvertToExtendedElevation: cave already finish initialisation "); return;);
+	shouldConvertToExtendedElevation = convert;
 }
 
 void Cave::logPikets() {
@@ -762,7 +760,7 @@ void Cave::prebuildPikets() {
 		genPiketsFakeWalls(caveViewPrefs.generateWallsForNoWallsPiketsMode);
 		prebuildInvalidated = false;
 
-		if (shouldConvertToExtendedInclination) convertToExtendedInclination();
+		if (shouldConvertToExtendedElevation) convertToExtendedElevation();
 	}
 }
 
@@ -910,8 +908,8 @@ void Cave::buildWallsObject() {
             bool findAtFakeadjPikets = find(nextPiket->adjFakePikets.begin(), nextPiket->adjFakePikets.end(), curPiket) != nextPiket->adjFakePikets.end();
             AssertReturn(findAtFakeadjPikets || findAtadjPikets, continue);
 
-			debugDraw(curPiket->pos, curPiket->pos + curPiket->dirrection * 1, Color::Green);
-			debugDraw(nextPiket->pos, nextPiket->pos + nextPiket->dirrection * 1, Color::Green);
+			debugDraw(curPiket->pos, curPiket->pos + curPiket->dirrection * 10, Color::Green);
+			debugDraw(nextPiket->pos, nextPiket->pos + nextPiket->dirrection * 10, Color::Green);
 
 //            debug2->position(curPiket->wallsCenter);
 //            debug2->colour(Color::White);

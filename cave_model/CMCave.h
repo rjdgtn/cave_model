@@ -23,7 +23,7 @@ public:
 	void addEdge(int verticeId0, int verticeId1);
 	void addEdge(const EdgeInfo& info);
 	void addWall(const Wall& wall, int linkToVerticeId, int parentPiketId = 0);
-	void setShouldConvertToExtendedInclination(bool convert);
+	void setShouldConvertToExtendedElevation(bool convert);
 
 	void finishInit(OutputType enabledToGenerateOutput = (OutputType)~OT_UNKNOW);
 	
@@ -34,7 +34,7 @@ public:
 	std::vector<CrossPiketLineBesier3> calcOutineBesier() const;
 
 protected:
-	void convertToExtendedInclination();
+	void convertToExtendedElevation();
 
     void buildFakeZSurveyPikets(); // обрабатывает зигзаговую съемку создавая дополнительные пикеты 
 	void prebuildPikets(); // prepare pikets for build walls and oultine
@@ -155,7 +155,7 @@ protected: // неиспольземое
 protected:                 
 	bool wasInited;
 
-	bool shouldConvertToExtendedInclination;
+	bool shouldConvertToExtendedElevation;
 
 	std::tr1::unordered_map<int, Piket> pikets;
 	std::map<std::pair<int, int>, EdgeInfo> edges;

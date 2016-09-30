@@ -64,9 +64,9 @@ namespace DotNetCaveModel {
 		return cmCave->setCaveViewPrefs(*caveViewPrefs);
 	}
 
-	void DNetCMCave::setShouldConvertToExtendedInclination(bool x)
+	void DNetCMCave::setShouldConvertToExtendedElevation(bool x)
 	{
-		cmCave->setShouldConvertToExtendedInclination(x);
+		cmCave->setShouldConvertToExtendedElevation(x);
 	}
 
 	bool DNetCMCave::setColoringMode(ColoringMode mode, bool grayscale)
@@ -147,7 +147,7 @@ namespace DotNetCaveModel {
 		temp = label;
 		res.label = marshal_as< std::string>(temp);
 		res.pos = V3(x, y, z);
-		res.extendedInclinationX = extendedInclinationX;
+		res.extendedElevationX = extendedElevationX;
 		res.col = Color(r, g, b);
 		res.priz = (PiketMark)priz;
 		//res.hasWalls = hasWalls;

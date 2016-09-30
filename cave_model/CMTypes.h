@@ -297,12 +297,12 @@ enum PiketMark {
 };
 
 struct PiketInfo {
-	PiketInfo(): id(getUniqId()), pos(0,0,0), extendedInclinationX(0), priz(MARK_NONE), hasWalls(0) { }
+	PiketInfo(): id(getUniqId()), pos(0,0,0), extendedElevationX(0), priz(MARK_NONE), hasWalls(0) { }
 	int id;
 	std::string name;
 	std::string label;
 	V3 pos;
-	float extendedInclinationX;
+	float extendedElevationX;
 	Color col;
 	PiketMark priz;
 	int hasWalls;

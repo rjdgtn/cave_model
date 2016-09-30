@@ -57,7 +57,7 @@ public:
 	void addW3D(long long parentPiket, const Wall w3d);
 	void addFakeWall(const PiketWall& wall);
 
-	void convertToExtendedInclination();
+	void convertToExtendedElevation();
 
 	// ְֲֵָָּֽֽ
     // hasPriz(priz) != !hasNoPriz(priz) ג מבשול סכףקאו !!!
@@ -91,7 +91,7 @@ public:
 	std::vector<ExtWallProj> getExtWalls2dWithConvexCorrection(V3 sortDirrection, V3 addinDirrection) const;
 
 	float getMinCutDimension() const;
-	float getExtendedInclinationX() const;
+	float getExtendedElevationX() const;
 
 protected:
     void processPiketPosAsWall();

@@ -128,6 +128,8 @@ void Piket::updateDirrection() {
     }
     dirrection.normalise();
 
+	if (dirrection == V3::ZERO) dirrection = sampleDirrection;
+
 	resetCache();
 }
 
@@ -372,11 +374,11 @@ void Piket::addFakeWall(const PiketWall& wall) {
 	resetCache();
 }
 
-void Piket::convertToExtendedInclination()
+void Piket::convertToExtendedElevation()
 {
 	AssertReturn(!allP3D.empty(), return);
 	V3 oldPos = pos;
-	pos.x = getExtendedInclinationX();
+	pos.x = getExtendedElevationX();
 	pos.y = 0;
 	
 	float minAngle = M_PI * 2;
@@ -394,13 +396,16 @@ void Piket::convertToExtendedInclination()
 	}
 
 	bool rotateForward = true;
-	if (minAnglePiket && minAnglePiket->getExtendedInclinationX() < getExtendedInclinationX()) {
+	if (minAnglePiket && minAnglePiket->getExtendedElevationX() < getExtendedElevationX()) {
 		rotateForward = false;
 	}
+	
+	/*rotateForward = !rotateForward;*/
 
 	Radian rot = dirrection.angleBetween(V3(dirrection.x, dirrection.y, 0));
+	if (dirrection.z < 0) rot = -rot;
 	Quaternion dirRotQuat;
-	dirRotQuat.FromAngleAxis(-rot, V3::UNIT_Y);
+	dirRotQuat.FromAngleAxis(rotateForward ? -rot : rot, V3::UNIT_Y);
 	
 	V3 newDirrection = dirRotQuat * V3(rotateForward ? 1 : -1, 0, 0);
 	
@@ -642,10 +647,10 @@ float Piket::getMinCutDimension() const {
 	}
 }
 
-float Piket::getExtendedInclinationX() const
+float Piket::getExtendedElevationX() const
 {
 	AssertReturn(!allP3D.empty(), return 0;);
-	return allP3D.front().extendedInclinationX;
+	return allP3D.front().extendedElevationX;
 }
 
 void PiketCache::addWalls2d(V3 dirrection, std::vector<WallProj> w2d) {
