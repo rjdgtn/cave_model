@@ -85,7 +85,8 @@ bool Cave::setCaveViewPrefs(const CaveViewPrefs& prefs) {
 		caveViewPrefs = prefs;
 		return false;
 	}
-	
+    outputChanged.clear();
+
     caveViewPrefs.wallsSurfaceMode = prefs.wallsSurfaceMode;   
     caveViewPrefs.showDebug = prefs.showDebug;               
     caveViewPrefs.fillRate = prefs.fillRate;                
@@ -119,11 +120,13 @@ bool Cave::setCaveViewPrefs(const CaveViewPrefs& prefs) {
 
         return true;
     } else {
+		updateWallsSurrfaceMode();
 		if (lookDirrectionChanged) {
 			buildOutline();
+			return true;
+		} else {
+			return false;
 		}
-        updateWallsSurrfaceMode();
-		return false;
     }
 }
 
@@ -143,7 +146,7 @@ void Cave::buildFakeZSurveyPikets() {
     std::tr1::unordered_map<int, Piket>::iterator pikiIt;
     for (pikiIt = pikets.begin(); pikiIt != pikets.end(); pikiIt++) {
 		Piket* curPiket = &pikiIt->second;
-		vector<const Piket*> zEdges = getZSurveyEdges(curPiket);
+		std::vector<const Piket*> zEdges = getZSurveyEdges(curPiket);
 		if (!zEdges.empty() && processedPikets.count(curPiket) == 0) {
             // cчитаем количество соседних пикетов зигзаг-съемки
             int numAdjZSurvPikets = zEdges.size();
@@ -158,7 +161,7 @@ void Cave::buildFakeZSurveyPikets() {
                 bool endReached = false;
                 do { // строим цепочку
 					endReached = true;
-					vector<const Piket*> zEdges = getZSurveyEdges(chainPiket);
+					std::vector<const Piket*> zEdges = getZSurveyEdges(chainPiket);
                     for (int i = 0; i < zEdges.size(); i++) {
 						const Piket* adjPiket = zEdges[i];
                         if (adjPiket && processedPikets.count(adjPiket) == 0) {
@@ -251,7 +254,7 @@ void Cave::processZSurveyPiketsChain(const std::list<const Piket*>& chain) {
             if (it == chain.end()) break;
         } else {
             prevLinkWasTurn = false;
-            it++;
+			it++;
         }
     }                   
 }
@@ -799,7 +802,7 @@ void Cave::buildOutlineBezier(std::vector<CrossPiketLineBesier3>& output, std::t
 			bool findAtadjPikets = find(nextPiket->adjPikets.begin(), nextPiket->adjPikets.end(), curPiket) != nextPiket->adjPikets.end();
 			bool findAtFakeadjPikets = find(nextPiket->adjFakePikets.begin(), nextPiket->adjFakePikets.end(), curPiket) != nextPiket->adjFakePikets.end();
 			AssertReturn(findAtFakeadjPikets || findAtadjPikets, continue);
-
+			LOG("\tbuild segment " << nextPiket->id << " - " << curPiket->id);
 			buildOutlineSegmenteBezier(nextPiket, curPiket, output, piketsForCreateCutOutline);
 		}
 	
@@ -810,6 +813,8 @@ void Cave::buildOutlineCut() {
 	LOG("Cave builld outline cut object started");
 	
 	prebuildPikets();
+
+	resetOutput(OT_OUTLINE_CUT);
 
 	std::vector<CrossPiketLineBesier3> outlineCutsBezier;
 
@@ -906,7 +911,7 @@ void Cave::buildWallsObject() {
             
             bool findAtadjPikets = find(nextPiket->adjPikets.begin(), nextPiket->adjPikets.end(), curPiket) != nextPiket->adjPikets.end();
             bool findAtFakeadjPikets = find(nextPiket->adjFakePikets.begin(), nextPiket->adjFakePikets.end(), curPiket) != nextPiket->adjFakePikets.end();
-            AssertReturn(findAtFakeadjPikets || findAtadjPikets, continue);
+			AssertReturn(findAtFakeadjPikets || findAtadjPikets, continue);
 
 			debugDraw(curPiket->pos, curPiket->pos + curPiket->dirrection * 10, Color::Green);
 			debugDraw(nextPiket->pos, nextPiket->pos + nextPiket->dirrection * 10, Color::Green);
@@ -1499,22 +1504,22 @@ std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(c
     if (start.first < 0 || start.second < 0) {
         return std::vector<std::pair<bool, int> >();
     }
-    LOG("aConvex: " + ToString(aConvex));
-    LOG("bConvex: " + ToString(bConvex));
+//    LOG("aConvex: " + ToString(aConvex));
+//    LOG("bConvex: " + ToString(bConvex));
    
     // first- вершина из массива а или б
     // second- индекс вершины в массиве
-    std::vector<std::pair<bool, int> > localOrder; //localTriangulationOrder
+	std::vector<std::pair<bool, int> > localOrder; //localTriangulationOrder
     int maxSteps = aConvex.size() + bConvex.size();
     int ca = start.first;
     int cb = start.second;
     int achanged = 0;
     int bchanged = 0;
-    LOG("localOrder: ");
+//    LOG("localOrder: ");
     localOrder.push_back(make_pair(true, aConvex.at(ca)));
     localOrder.push_back(make_pair(false, bConvex.at(cb)));
-    LOG("   true " << aConvex.at(ca));
-    LOG("   false " << bConvex.at(cb));
+//	LOG("   true " << aConvex.at(ca));
+//	LOG("   false " << bConvex.at(cb));
     for (int step = 0; step < maxSteps; step++) {
         int na = (ca + 1) % aConvex.size();
         int nb = (cb + 1) % bConvex.size();
@@ -1536,7 +1541,7 @@ std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(c
         
         if (selctA) {
             if (force_convex) {
-                LOG("   true " << aConvex.at(na));
+                //LOG("   true " << aConvex.at(na));
                 localOrder.push_back(make_pair(true, aConvex.at(na)));  
             } else{
                 // вставляем стены (i, ni] не попавшиме в выпуклый многоугольник 
@@ -1544,7 +1549,7 @@ std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(c
                 int ni = aConvex.at(na);
                 do {
                     i = (i + 1) % a.size();
-                    LOG("   true " << i);
+					//LOG("   true " << i);
                     localOrder.push_back(make_pair(true, i));    
                 } while (i != ni);
             }
@@ -1553,15 +1558,15 @@ std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(c
         } else {
             // вставляем стены (j, nj] не попавшиме в выпуклый многоугольник 
              if (force_convex) {
-                LOG("   false " <<  bConvex.at(nb));
+			  //  LOG("   false " <<  bConvex.at(nb));
                 localOrder.push_back(make_pair(false, bConvex.at(nb)));  
             } else{
                 int j = bConvex.at(cb);
                 int nj = bConvex.at(nb);
                 do {
                     j = (j + 1) % b.size();
-                    LOG("   false " << j);
-                    localOrder.push_back(make_pair(false, j));    
+				//    LOG("   false " << j);
+					localOrder.push_back(make_pair(false, j));
                 } while (j != nj && !force_convex);
             }  
             cb = nb;   
@@ -2372,6 +2377,7 @@ std::vector<const Piket*> Cave::getZSurveyEdges(const Piket* from) const
 void Cave::resetOutput(OutputType type) {
 	outputPoly[type].clear();
 	outputLines[type].clear();
+	outputChanged.insert(type);
 }
 
 }

@@ -12,7 +12,7 @@ typedef Ogre::Vector2 V2;
 
 
 enum GenerateWallsForNoWallsPiketsMode { //если между двумя пикетами со стенами есть пикеты без стен
-    GWNWPM_NONE,     // пикеты со стенами между собой не не соединяются
+	GWNWPM_NONE,     // пикеты со стенами между собой не не соединяются
     GWNWPM_SKIP,     // пикеты со стенами соединяются между собой так как будто они соседние
     GWNWPM_TRAIL,    // стены интерполируются на пикетах без стен и петляют вслед за ними
     GWNWPM_BUDGE,    // стены интерполируются но сдвигаются так, чтобы все промежуточные пикеты были внутри объема
@@ -254,6 +254,7 @@ inline Color operator* (float f, const Color& c) {
 
 enum OutputType {
 	OT_UNKNOW = 0,
+	OT_NONE = 0,
 	OT_THREAD = 1,
 	OT_WALL = 2,
 	OT_WALL_CUTS = 4,
@@ -262,6 +263,7 @@ enum OutputType {
 	OT_BOX = 32,
 	OT_OUTLINE = 64,
 	OT_OUTLINE_CUT = 128,
+	OT_ALL = ~OT_NONE,
 };
 
 struct OutputPoly {

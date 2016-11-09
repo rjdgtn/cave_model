@@ -30,7 +30,7 @@ public:
 	const std::vector<OutputPoly>& getOutputPoly(OutputType type) { return outputPoly[type]; }
 	const std::vector<OutputLine>& getOutputLine(OutputType type) { return outputLines[type]; }
 	bool isOutputEnabled(OutputType type) { return outputLayers[type]; }
-	
+	bool isOutputChanged(OutputType type) { return outputChanged.count(type) == 1; }
 	std::vector<CrossPiketLineBesier3> calcOutineBesier() const;
 
 protected:
@@ -179,6 +179,7 @@ protected:
 	std::tr1::unordered_map<OutputType, std::vector<OutputPoly> > outputPoly;
 	std::tr1::unordered_map<OutputType, std::vector<OutputLine> > outputLines;
 	std::tr1::unordered_map<OutputType, bool> outputLayers;
+	std::set<OutputType> outputChanged;
 	float colourMult;
 
 	bool prebuildInvalidated;

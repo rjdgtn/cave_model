@@ -286,15 +286,15 @@ std::vector<PiketWall> Piket::propagateWallBesier3(int h, int i, int j, int k, i
 
 	LineBesier3 lineBezier3 = getCutSegmentBesier3(h, i, j, k, strong);
  
-	Debug::inst()->drawLine(lineBezier3.a, lineBezier3.b, Color::Red);
-
-	Debug::inst()->drawLine(lineBezier3.b, lineBezier3.bc, Color::Red);
+//	Debug::inst()->drawLine(lineBezier3.a, lineBezier3.b, Color::Red);
+//
+//	Debug::inst()->drawLine(lineBezier3.b, lineBezier3.bc, Color::Red);
 
     for (int addWallIdx = 1; addWallIdx <= addWallsNum; addWallIdx++) {
         double t = (float)addWallIdx / (addWallsNum + 1);
 		V3 pos = besier3(t, lineBezier3);
         result.push_back(PiketWall(pos));
-    }
+	}
     return result;
 }
 
@@ -310,6 +310,8 @@ Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 normal) const {
 	const std::vector<WallProj>& rotWalls = getWalls2d(normal);
 
 	V3 axis = lookDirection.crossProduct(normal).normalisedCopy();
+	if (axis.isZeroLength()) axis = lookDirection.crossProduct(V3::UNIT_Z).normalisedCopy();
+	if (axis.isZeroLength()) axis = lookDirection.crossProduct(V3::UNIT_X).normalisedCopy();
 	//debugDraw(piketPos, piketPos + axis * 10);
 	float min = FLT_MAX;
 	float max = -(FLT_MAX / 2);
@@ -330,7 +332,7 @@ Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 normal) const {
 			lr.left = iPos;
 		}
 
-		int addWallsNum = iPos.distance(jPos) * PointsInMeter * 8 - 2;
+		int addWallsNum = iPos.distance(jPos) / PointsInMeter * 8 - 2;
 
 		int wallsNum = rotWalls.size();
 		int h = (wallsNum + i - 1) % wallsNum;
@@ -696,7 +698,7 @@ const std::vector<WallProj>* PiketCache::getWalls2d(V3 dirrection) const {
 	for ( ; it != walls2d.end(); it++) {
 		if (it->dirrection == dirrection) return &(it->walls2d);
 	}
-	return nullptr;
+	return NULL;
 }
 
 const std::vector<WallProj>* PiketCache::getWalls2dWithConvexCorrection(V3 dirrection) const {
@@ -704,7 +706,7 @@ const std::vector<WallProj>* PiketCache::getWalls2dWithConvexCorrection(V3 dirre
 	for (; it != walls2dWithConvexCorrection.end(); it++) {
 		if (it->dirrection == dirrection) return &(it->walls2d);
 	}
-	return nullptr;
+	return NULL;
 }
 
 }

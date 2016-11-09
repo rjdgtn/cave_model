@@ -7,8 +7,8 @@ namespace CM {
 struct PiketCache {
 public:
 	PiketCache() :
-		minCutDimension(nullptr),
-		cutBezier3(nullptr) { }
+		minCutDimension(NULL),
+		cutBezier3(NULL) { }
 
 	struct Walls2dCache {
 		V3 dirrection;
