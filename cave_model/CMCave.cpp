@@ -1431,7 +1431,7 @@ WallTriangles Cave::buildWallSegmentConvexPolyMode(const Piket* prevPiket, const
 
         V3 dirrection = (prevPiketDirrection + curPiketDirrection) / 2;
 
-        std::vector<ExtWallProj> prevWalls2dOrder;
+		std::vector<ExtWallProj> prevWalls2dOrder;
         std::vector<ExtWallProj> curWalls2dOrder;
         
         bool onlyConvexWalls = prevPiket->hasPriz(MARK_ONLY_CONVEX_WALLS) || curPiket->hasPriz(MARK_ONLY_CONVEX_WALLS);
@@ -1440,9 +1440,9 @@ WallTriangles Cave::buildWallSegmentConvexPolyMode(const Piket* prevPiket, const
 			prevWalls2dOrder = prevPiket->getExtWalls2dWithConvexCorrection(prevPiketDirrection, dirrection);
             curWalls2dOrder = curPiket->getExtWalls2dWithConvexCorrection(curPiketDirrection, dirrection);
         } else {
-            prevWalls2dOrder = prevPiket->getExtWalls2d(prevPiketDirrection, dirrection);
-            curWalls2dOrder = curPiket->getExtWalls2d(curPiketDirrection, dirrection);
-        }
+			prevWalls2dOrder = prevPiket->getExtWalls2d(prevPiketDirrection, dirrection);
+			curWalls2dOrder = curPiket->getExtWalls2d(curPiketDirrection, dirrection);
+		}
 
         std::vector<std::pair<bool, int> > trianOrder = calcTriangulationOrdertConvexPolyMode(prevWalls2dOrder, curWalls2dOrder, true, onlyConvexWalls);
 
@@ -1510,80 +1510,80 @@ std::vector<std::pair<bool, int> > Cave::calcTriangulationOrdertConvexPolyMode(c
     // first- вершина из массива а или б
     // second- индекс вершины в массиве
 	std::vector<std::pair<bool, int> > localOrder; //localTriangulationOrder
-    int maxSteps = aConvex.size() + bConvex.size();
-    int ca = start.first;
-    int cb = start.second;
-    int achanged = 0;
-    int bchanged = 0;
+	int maxSteps = aConvex.size() + bConvex.size();
+	int ca = start.first;
+	int cb = start.second;
+	int achanged = 0;
+	int bchanged = 0;
 //    LOG("localOrder: ");
-    localOrder.push_back(make_pair(true, aConvex.at(ca)));
-    localOrder.push_back(make_pair(false, bConvex.at(cb)));
+	localOrder.push_back(make_pair(true, aConvex.at(ca)));
+	localOrder.push_back(make_pair(false, bConvex.at(cb)));
 //	LOG("   true " << aConvex.at(ca));
 //	LOG("   false " << bConvex.at(cb));
-    for (int step = 0; step < maxSteps; step++) {
-        int na = (ca + 1) % aConvex.size();
-        int nb = (cb + 1) % bConvex.size();
-        V2 cana = a.at(aConvex.at(na)).posByGlobalDir - a.at(aConvex.at(ca)).posByGlobalDir; 
-        V2 cbnb = b.at(bConvex.at(nb)).posByGlobalDir - b.at(bConvex.at(cb)).posByGlobalDir;
-        
-        bool selctA = true;
-        if (achanged == a.size()) {
-            selctA = false;
-        } else if (bchanged == b.size()) { 
-            selctA = true;
-        } else if (cana.length() < 0.01f * PointsInMeter) {
-            selctA = true;
-        } else if (cbnb.length() < 0.01f * PointsInMeter) {
-            selctA = false;
-        } else {
-            selctA = ((cana.crossProduct(cbnb) > 0) == clockwise); 
-        }
-        
-        if (selctA) {
-            if (force_convex) {
+	for (int step = 0; step < maxSteps; step++) {
+		int na = (ca + 1) % aConvex.size();
+		int nb = (cb + 1) % bConvex.size();
+		V2 cana = a.at(aConvex.at(na)).posByGlobalDir - a.at(aConvex.at(ca)).posByGlobalDir;
+		V2 cbnb = b.at(bConvex.at(nb)).posByGlobalDir - b.at(bConvex.at(cb)).posByGlobalDir;
+
+		bool selctA = true;
+		if (achanged == a.size()) {
+			selctA = false;
+		} else if (bchanged == b.size()) {
+			selctA = true;
+		} else if (cana.length() < 0.01f * PointsInMeter) {
+			selctA = true;
+		} else if (cbnb.length() < 0.01f * PointsInMeter) {
+			selctA = false;
+		} else {
+			selctA = ((cana.crossProduct(cbnb) > 0) == clockwise);
+		}
+
+		if (selctA) {
+			if (force_convex) {
                 //LOG("   true " << aConvex.at(na));
-                localOrder.push_back(make_pair(true, aConvex.at(na)));  
-            } else{
-                // вставляем стены (i, ni] не попавшиме в выпуклый многоугольник 
-                int i = aConvex.at(ca);
-                int ni = aConvex.at(na);
-                do {
-                    i = (i + 1) % a.size();
+				localOrder.push_back(make_pair(true, aConvex.at(na)));
+			} else{
+				// вставляем стены (i, ni] не попавшиме в выпуклый многоугольник
+				int i = aConvex.at(ca);
+				int ni = aConvex.at(na);
+				do {
+					i = (i + 1) % a.size();
 					//LOG("   true " << i);
-                    localOrder.push_back(make_pair(true, i));    
-                } while (i != ni);
-            }
-            ca = na;
-            achanged++;                
-        } else {
-            // вставляем стены (j, nj] не попавшиме в выпуклый многоугольник 
-             if (force_convex) {
+					localOrder.push_back(make_pair(true, i));
+				} while (i != ni);
+			}
+			ca = na;
+			achanged++;
+		} else {
+			// вставляем стены (j, nj] не попавшиме в выпуклый многоугольник
+			 if (force_convex) {
 			  //  LOG("   false " <<  bConvex.at(nb));
-                localOrder.push_back(make_pair(false, bConvex.at(nb)));  
-            } else{
-                int j = bConvex.at(cb);
-                int nj = bConvex.at(nb);
-                do {
-                    j = (j + 1) % b.size();
+				localOrder.push_back(make_pair(false, bConvex.at(nb)));
+			} else{
+				int j = bConvex.at(cb);
+				int nj = bConvex.at(nb);
+				do {
+					j = (j + 1) % b.size();
 				//    LOG("   false " << j);
 					localOrder.push_back(make_pair(false, j));
-                } while (j != nj && !force_convex);
-            }  
-            cb = nb;   
-            bchanged++;              
-        } 
-    }
+				} while (j != nj && !force_convex);
+			}
+			cb = nb;
+			bchanged++;
+		}
+	}
 
-    std::vector<std::pair<bool, int> > globalOrder = localOrder;
+	std::vector<std::pair<bool, int> > globalOrder = localOrder;
 //globalTriangulationOrder
 //    for (int i = 0; i < localOrder.size(); i++) {
 //        int ni = (i + 1) % localOrder.size();
 //
 //        if (localOrder[i]) {
-//            
+//
 //        }
 //    }
-    return  globalOrder;    
+	return  globalOrder;
 }
 
 void Cave::buildOutlineSegmenteBezier(const Piket* prevPiket, const Piket* curPiket, std::vector<CrossPiketLineBesier3>& output, std::tr1::unordered_set<int>* piketsForCreateCutOutline) const {

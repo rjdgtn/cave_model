@@ -112,7 +112,7 @@ struct Vertice {
     x(0), y(0), z(0) { }
 
     Vertice(const V3& vec):
-    x((int)(vec.x * 200.0f / PointsInMeter)), y((int)(vec.y * 200.0f / PointsInMeter)), z((int)(vec.z * 200.0f / PointsInMeter)) { }
+    x((int)(vec.x * 0.02f * PointsInMeter)), y((int)(vec.y * 0.02f * PointsInMeter)), z((int)(vec.z * 0.02f * PointsInMeter)) { }
 
     bool operator< (const Vertice& vtc) const {
         return x < vtc.x || ( x == vtc.x && (y < vtc.y || y == vtc.y && z < vtc.z)); 
@@ -314,8 +314,8 @@ template <typename WP>
 std::vector<int> getConvexPoly(const std::vector<WP>& poly, int startPolyIdx, int finishPolyIdx, bool clockwise) {
 	std::vector<int> result(poly.size());
 	int polySegmentSize = finishPolyIdx - startPolyIdx + 1;
-	for (int i = startPolyIdx; i <= finishPolyIdx; i++) {
-		result[i] = i;
+	for (int j = startPolyIdx; j <= finishPolyIdx; j++) {
+		result[j] = j;
 	}
 
 	if (polySegmentSize <= 3) {

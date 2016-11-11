@@ -547,7 +547,7 @@ const std::vector<CM::WallProj>& Piket::getWalls2d(V3 dirrection) const {
 			std::reverse(copyForRevert.begin(), copyForRevert.end());
 			for (int i = 0; i < copyForRevert.size(); i++) {
 				copyForRevert[i].to0XAngleBySelfDir = Radian(2 * M_PI) - copyForRevert[i].to0XAngleBySelfDir;
-				copyForRevert[i].posBySelfDir = -copyForRevert[i].posBySelfDir;
+				copyForRevert[i].posBySelfDir.x = -copyForRevert[i].posBySelfDir.x;
 			}
 			cache.addWalls2d(dirrection, copyForRevert);
 			return getWalls2d(dirrection);
@@ -567,7 +567,7 @@ const std::vector<CM::WallProj>& Piket::getWalls2dWithConvexCorrection(V3 dirrec
 			std::reverse(copyForRevert.begin(), copyForRevert.end());
 			for (int i = 0; i < copyForRevert.size(); i++) {
 				copyForRevert[i].to0XAngleBySelfDir = Radian(2 * M_PI) - copyForRevert[i].to0XAngleBySelfDir;
-				copyForRevert[i].posBySelfDir = -copyForRevert[i].posBySelfDir;
+				copyForRevert[i].posBySelfDir.x = -copyForRevert[i].posBySelfDir.x;
 			}
 			cache.addWalls2dWithConvexCorrection(dirrection, copyForRevert);
 			return getWalls2dWithConvexCorrection(dirrection);
