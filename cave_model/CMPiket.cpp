@@ -9,30 +9,31 @@ using namespace Ogre;
 using namespace std;
 
 namespace CM {
-
+ /*
 struct PreperedForClassifyWall {
 	PreperedForClassifyWall(const Wall* raw, V3 rotRelPos);
 	// является ли внешней для ассоциированного пикета
-    bool fixed;
-    const Wall* raw;
-    V3 rotRelPos;
-    // угол вдоль Z
-    Radian alongZAngle;
-    // угол вокруг Z (от X0)
-    Radian crossZAngle;
+	bool fixed;
+	const Wall* raw;
+	V3 rotRelPos;
+	// угол вдоль Z
+	Radian alongZAngle;
+	// угол вокруг Z (от X0)
+	Radian crossZAngle;
 };
 
 bool compareWallsByRotatedZ(const PreperedForClassifyWall& w1, const PreperedForClassifyWall& w2) {
-    return w1.rotRelPos.z < w2.rotRelPos.z;
+	return w1.rotRelPos.z < w2.rotRelPos.z;
 }
 
 PreperedForClassifyWall::PreperedForClassifyWall(const Wall* raw, V3 rotRelPos)
 : raw(raw)
 , rotRelPos(rotRelPos)
 , fixed(false) {
-    alongZAngle = rotRelPos.angleBetween(V3::UNIT_Z);
-    crossZAngle = V2(rotRelPos.x, rotRelPos.y).angleTo(V2::UNIT_X);
+	alongZAngle = rotRelPos.angleBetween(V3::UNIT_Z);
+	crossZAngle = V2(rotRelPos.x, rotRelPos.y).angleTo(V2::UNIT_X);
 }
+*/
 
 void Piket::addP3D(const PiketInfo& piket) {
 	allP3D.push_back(piket);
@@ -368,6 +369,11 @@ void Piket::classifyWalls() {
 		//if (!allWalls.at(i)->ignoreAt3d) {
 		//}
 	}
+
+	if (classifiedWalls.size() == 1) {
+		classifiedWalls.push_back(PiketWall(pos));
+	}
+
 	resetCache();
 }
 
