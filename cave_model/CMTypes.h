@@ -1,5 +1,6 @@
 #pragma once
 #include "ogre/OgreVector3.h"
+#include "ogre/OgreVector2.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -305,7 +306,7 @@ struct PiketInfo {
 	std::string label;
 	V3 pos;
 	float extendedElevationX;
-	Color col;
+//	Color col;
 	PiketMark priz;
 	int hasWalls;
 
@@ -354,5 +355,15 @@ struct CrossPiketLineBesier3 : public LineBesier3 {
 	int aid;
 	int bid;
 };
+
+struct CrossPiketLine2dBesier3  {
+    V2 a {0, 0};
+	V2 ac {0, 0};
+	V2 bc {0, 0};
+	V2 b {0, 0};
+	int aid {0};
+	int bid {0};
+};
+
 
 }
