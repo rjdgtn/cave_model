@@ -921,13 +921,13 @@ namespace CM {
             AssertReturn(bPiket, continue);
 
             Color aCol = getColorForPiketAtEdge(aPiket, bPiket);
-            aCol.r *= 0.5;
-            aCol.g *= 0.5;
-            aCol.b *= 0.5;
+//             aCol.r *= 0.5;
+//             aCol.g *= 0.5;
+//             aCol.b *= 0.5;
             Color bCol = getColorForPiketAtEdge(bPiket, aPiket);
-            bCol.r *= 0.5;
-            bCol.g *= 0.5;
-            bCol.b *= 0.5;
+//             bCol.r *= 0.5;
+//             bCol.g *= 0.5;
+//             bCol.b *= 0.5;
             
             for (int i = 0; i < 4; i++) {
                 float irate = i / 4.0f;
