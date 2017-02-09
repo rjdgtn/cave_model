@@ -65,8 +65,10 @@ namespace CM {
         void addW3D(long long parentPiket, const Wall w3d);
         void addFakeWall(const PiketWall& wall);
 
-        void convertToExtendedElevation();
+        void convertToExtendedElevation(float rate = 1.0f);
 
+        V3 getDirrectionForOverlay() const;
+        
         // ְֲֵָָּֽֽ
         // hasPriz(priz) != !hasNoPriz(priz) ג מבשול סכףקאו !!!
         // ְֲֵָָּֽֽ
@@ -106,8 +108,8 @@ namespace CM {
         float getMinCutDimension() const ;
         float getExtendedElevationX() const ;
 
-        V3 getExtendedElevationPos() const {
-            return V3(getExtendedElevationX(), 0, origPos.z);
+        V3 getExtendedElevationPos(float rate) const {
+            return origPos * (1.0f - rate) + V3(getExtendedElevationX(), 0, origPos.z) * rate;
         }
 
     protected:

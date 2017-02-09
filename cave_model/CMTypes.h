@@ -112,33 +112,6 @@ enum RenderSimpleMode {
 };
 
 struct CaveViewPrefs {
-    CaveViewPrefs()
-    : surfColorId(-1)
-    , dupColorId(-1)
-    , stretchWallsOverPiketNumMax(8)
-    , stretchWallsOverPiketLengthMax(50)
-    , wallsPropagateMode(WPM_NONE)//(WPM_1M)
-    , wallsShadowMode(WSM_SMOOTH)
-    , wallsBlowMode(WBM_NONE)
-    , wallsSurfaceMode(WSFM_NONE)//(WSFM_SURF)
-    , generateWallsForNoWallsPiketsMode(GWNWPM_BUDGE)
-    , wallsSegmentTriangulationMode(WSTM_CONVEX_POLY)
-    , wallsTrianglesBlowMode(/*WTBM_16*/WTBM_NONE)
-    , wallsTrianglesBlowStrength(WTBS_MEDIUM)
-    , ambientLightStrength(ALS_50)
-    , wallColoringMode(WCM_TIGHTNESS_SMOOTH)
-    , showThread(true)
-    , fillRate(1.0f)
-	, showDebug(false)
-	, showWallLines(false)
-	, showBox(false)
-	, lookDirrection(0, 0, 0)
-	, showSections(false)
-    , skipNum(0)
-	, darkMode(false)
-	, grayscale(false)
-    { }
-
     bool operator== (const CaveViewPrefs& o2) {
         return surfColorId == o2.surfColorId
         && dupColorId == o2.dupColorId
@@ -164,37 +137,39 @@ struct CaveViewPrefs {
 		&& showOutline == o2.showOutline
 		&& skipNum == o2.skipNum
 		&& darkMode == o2.darkMode
-		&& grayscale == o2.grayscale;
+		&& grayscale == o2.grayscale
+   		&& allOutlineCuts == o2.allOutlineCuts;
 		
     }
 
     bool operator!= (const CaveViewPrefs& o2) { return !(*this == o2); };
 
-    int surfColorId;
-    int dupColorId;
-    int stretchWallsOverPiketNumMax;
-    int stretchWallsOverPiketLengthMax;
-    WallsPropagateMode wallsPropagateMode;
-    WallsShadowMode wallsShadowMode;
-    WallsBlowMode wallsBlowMode;
-    WallsSurfaceMode wallsSurfaceMode;
-    GenerateWallsForNoWallsPiketsMode generateWallsForNoWallsPiketsMode;
-    WallsSegmentTriangulationMode wallsSegmentTriangulationMode;
-    WallsTrianglesBlowMode wallsTrianglesBlowMode;
-    WallsTrianglesBlowStrength wallsTrianglesBlowStrength;
-    AmbientLightStrength ambientLightStrength;
-    WallColoringMode wallColoringMode;
-	bool showThread;
-	bool showSections;
-	bool showWallLines;
-	bool showBox;
-	V3 lookDirrection;
-	bool showOutline;
-	float fillRate; // 0..1
-	bool showDebug;
-    int skipNum;
-	bool darkMode;
-	bool grayscale;
+    int surfColorId{-1};
+    int dupColorId{-1};
+    int stretchWallsOverPiketNumMax{8};
+    int stretchWallsOverPiketLengthMax{50};
+    WallsPropagateMode wallsPropagateMode{WPM_NONE};
+    WallsShadowMode wallsShadowMode{WSM_SMOOTH};
+    WallsBlowMode wallsBlowMode{WBM_NONE};
+    WallsSurfaceMode wallsSurfaceMode{WSFM_NONE};
+    GenerateWallsForNoWallsPiketsMode generateWallsForNoWallsPiketsMode{GWNWPM_BUDGE};
+    WallsSegmentTriangulationMode wallsSegmentTriangulationMode{WSTM_CONVEX_POLY};
+    WallsTrianglesBlowMode wallsTrianglesBlowMode{/*WTBM_16*/WTBM_NONE};
+    WallsTrianglesBlowStrength wallsTrianglesBlowStrength{WTBS_MEDIUM};
+    AmbientLightStrength ambientLightStrength{ALS_50};
+    WallColoringMode wallColoringMode{WCM_TIGHTNESS_SMOOTH};
+	bool showThread{true};
+	bool showSections{false};
+	bool showWallLines{false};
+	bool showBox{false};
+	V3 lookDirrection{0, 0, 0};
+	bool showOutline{false};
+	float fillRate{1.0f}; // 0..1
+	bool showDebug {false};
+    int skipNum {0};
+	bool darkMode {false};
+	bool grayscale {false};
+    bool allOutlineCuts {true};
 };
 
 struct Color {

@@ -311,7 +311,8 @@ namespace CM {
 	//{
 	//	if ( Tables != NULL )
 	//	{	delete Tables ; Tables = NULL ; }
-	//}
+	//}
+
 
 	/******************************************************************************/
 
@@ -343,7 +344,8 @@ namespace CM {
 	//	table_t& Table = (*Tables)[FileName] ;
 	//	LoadTableBasic ( FileName, Table ) ;
 	//	return Table ;
-	//}
+	//}
+
 
 	/******************************************************************************/
 
@@ -480,7 +482,8 @@ namespace CM {
 	//		Pointer++ ;
 	//	}
 	//	#undef Add
-	//}
+	//}
+
 
 	/******************************************************************************/
 
@@ -495,7 +498,8 @@ namespace CM {
 	//			Log ( "%s -> %s", Field->first.c_str(), Field->second.c_str() ) ;
 	//		}
 	//	}
-	//}
+	//}
+
 
 	/******************************************************************************/
 
@@ -593,7 +597,8 @@ namespace CM {
 	//	
 	//	/* save file */
 	//	file_put_contents ( FileName, Contents ) ;
-	//}
+	//}
+
 
 	/******************************************************************************/
 
@@ -603,7 +608,8 @@ namespace CM {
 	//{
 	//	Check ( strlen(Language)==2 && strlen(NewLanguage)==2 ) ;
 	//	strcpy ( Language, NewLanguage );
-	//}
+	//}
+
 
 	/******************************************************************************/
 
@@ -723,7 +729,8 @@ namespace CM {
 	//	}
 	//
 	//	return res;
-	//}
+	//}
+
 	/******************************************************************************/
 
 	/* split string by newlines */
@@ -735,7 +742,8 @@ namespace CM {
 	//{
 	//	Check(Strings != NULL);
 	//	(*Strings)[name][Language] = string;
-	//}
+	//}
+
 	/******************************************************************************/
 
 	// Limit string to n lines, appending a message if limit happens
@@ -777,7 +785,8 @@ namespace CM {
 //const char* GetLanguage()
 //{
 //	return Language;
-//}
+//}
+
 
 //MiniCSV::MiniCSV(const std::string& filename)
 //	: mFileName(filename)
@@ -814,5 +823,6 @@ namespace CM {
 //	auto it = mColNames.find(fieldname);
 //	CheckError(it!=mColNames.end(), "no field '%s' in table '%s'", fieldname.c_str(), mFileName.c_str());
 //	return it->second<mFields.size() ? mFields[it->second] : empty;
-//}
+//}
+
 

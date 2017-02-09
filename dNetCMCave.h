@@ -8,7 +8,7 @@ namespace CM {
 	struct CaveViewPrefs; 
 }
 
-namespace DotNetCaveModel{
+namespace DotNetCaveModel {
 
 	using namespace System::Collections::Generic;
 
@@ -40,15 +40,15 @@ namespace DotNetCaveModel{
 	public ref struct DNPiketInfo {
 		DNPiketInfo() : id(CM::PiketInfo::getUniqId()) { }
 		int id;
-		String^ name {""};
-		String^ label {""};
+		System::String^ name{ "" };
+		System::String^ label{ "" };
 		float x {0};
 		float y {0};
 		float z {0};
 		float extendedElevationX{ 0 };
-		float r {0};
-		float g {0};
-		float b {0};
+// 		float r {0};
+// 		float g {0};
+// 		float b {0};
 		DNPiketMark priz { DNPiketMark::MARK_NONE};
 		//int hasWalls {0};
 				
@@ -136,4 +136,5 @@ namespace DotNetCaveModel{
 		CM::CaveViewPrefs* caveViewPrefs;
 		CM::Cave* cmCave;
 	};
+
 }

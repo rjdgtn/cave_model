@@ -3,7 +3,8 @@
 #include "CMAssertions.h"
 #include "wykobi_wrap.h"
 #include "CMDebug.h"    
-#include "CMLog.h"
+#include "CMLog.h"   
+#include <algorithm>
 
 using namespace wykobi;
 using namespace Ogre;
@@ -96,7 +97,23 @@ namespace CM {
         // wallsCenter = piketEffectivePos;
         // wallsMassCenter = getWallsMassCenter(dirrection);
     }
+    
+    V3 Piket::getDirrectionForOverlay() const {
+        V3 res(0, 0, 0);
 
+        if (adjPikets.size() >= 1 && adjPikets.size() <= 2) {
+            res += (adjPikets.front()->wallsCenter - wallsCenter).normalisedCopy();
+        }
+        if (adjPikets.size() == 2) {
+            res += (wallsCenter - adjPikets.back()->wallsCenter).normalisedCopy();
+        }
+        
+        if (res == V3::ZERO) return res = dirrection;
+        res.normalise();
+
+        return res;
+    }
+    
     void Piket::updateDirrection() {
         V3 sampleDirrection = V3::ZERO;
         dirrection = V3::ZERO;
@@ -135,6 +152,12 @@ namespace CM {
         if (dirrection == V3::ZERO)
             dirrection = sampleDirrection;
 
+//        static bool b = true;
+//        if (b) {
+//          dirrection = -dirrection;
+//        }
+//        b = !b;
+            
         resetCache();
     }
 
@@ -303,8 +326,13 @@ namespace CM {
         return result;
     }
 
-    Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 normal) const {
-
+    Piket::LeftRight Piket::getCornerCutPoints(V3 lookDirection, V3 norm) const {   
+        bool swap = false;
+        if (norm.z < 0 || (norm.z == 0 && norm.y < 0) || (norm.z == 0 && norm.y == 0 && norm.x < 0)) {
+            swap = true;
+            norm = -norm;
+        }
+    
         LeftRight lr;
         lr.left = V3(0, 0, 0);
         lr.right = V3(0, 0, 0);
@@ -312,9 +340,9 @@ namespace CM {
 
         V3 piketPos = piketEffectivePos;
 
-        const std::vector<WallProj>&rotWalls = getWalls2d(normal);
+        const std::vector<WallProj>&rotWalls = getWalls2d(norm);
 
-        V3 axis = lookDirection.crossProduct(normal).normalisedCopy();
+        V3 axis = lookDirection.crossProduct(norm).normalisedCopy();
         if (axis.isZeroLength())
             axis = lookDirection.crossProduct(V3::UNIT_Z).normalisedCopy();
         if (axis.isZeroLength())
@@ -339,7 +367,7 @@ namespace CM {
                 lr.left = iPos;
             }
 
-            int addWallsNum = iPos.distance(jPos) / PointsInMeter * 8 - 2;
+            int addWallsNum = std::ceil(std::max(0.0f, iPos.distance(jPos) / PointsInMeter * 8 - 2));
 
             int wallsNum = rotWalls.size();
             int h = (wallsNum + i - 1) % wallsNum;
@@ -359,9 +387,10 @@ namespace CM {
                 }
             }
         }
+        if (swap) std::swap(lr.left, lr.right);
         return lr;
         // if (const LeftRight* res = cache.getCornerCut(lookDirection)) {
-        // return *res;
+        // return *res;                                                                                                         
         // } else {
         // cache.setCornerCut(lr, lookDirection);
         // return getCornerCutPoints(lookDirection);
@@ -388,10 +417,10 @@ namespace CM {
         resetCache();
     }
 
-    void Piket::convertToExtendedElevation() {
+    void Piket::convertToExtendedElevation(float rate) {
         AssertReturn(!allP3D.empty(), return);
         LOG(getName());
-        pos = getExtendedElevationPos();
+        pos = getExtendedElevationPos(rate);
         V3 z0Dirrection(dirrection.x, dirrection.y, 0);
                  
         Quaternion rotQuat = Quaternion::IDENTITY;
@@ -405,12 +434,12 @@ namespace CM {
                 
                 if (origDirToI.length() < 0.01 * PointsInMeter) continue;
                 
-                V3 newDirToI = adjPikets[i]->getExtendedElevationPos() - pos;
+                V3 newDirToI = adjPikets[i]->getExtendedElevationPos(rate) - pos;
                 newDirToI.z = 0;
                 for (int j = i+1; j < adjPikets.size(); j++) {
                     V3 origDirToJ = adjPikets[j]->origPos - origPos;
                     origDirToJ.z = 0;
-                    V3 newDirToJ = adjPikets[j]->getExtendedElevationPos() - pos;
+                    V3 newDirToJ = adjPikets[j]->getExtendedElevationPos(rate) - pos;
                     newDirToJ.z = 0;
                                        
                     if (origDirToJ.length() < 0.01 * PointsInMeter) continue;
@@ -429,12 +458,12 @@ namespace CM {
                 
                 V3 origDirTo1 = pik1->origPos - origPos;
                 origDirTo1.z = 0;
-                V3 newDirTo1 = pik1->getExtendedElevationPos() - pos;
+                V3 newDirTo1 = pik1->getExtendedElevationPos(rate) - pos;
                 newDirTo1.z = 0;                       
                 
                 V3 origDirTo2 = pik2->origPos - origPos;
                 origDirTo2.z = 0; 
-                V3 newDirTo2 = pik2->getExtendedElevationPos() - pos;
+                V3 newDirTo2 = pik2->getExtendedElevationPos(rate) - pos;
                 newDirTo2.z = 0;   
 
                 if (origDir.length() < 0.001) {
@@ -447,13 +476,13 @@ namespace CM {
                 float angleOrigDirToOrigDirTo1 = origDir.angleBetween(origDirTo1).valueRadians();
                 float angleOrigDirToOrigDirTo2 = origDir.angleBetween(origDirTo2).valueRadians();
 
-                float rot1Mult = angleOrigDirToOrigDirTo1 / (angleOrigDirToOrigDirTo1 + angleOrigDirToOrigDirTo2);
-                float rot2Mult = angleOrigDirToOrigDirTo2 / (angleOrigDirToOrigDirTo1 + angleOrigDirToOrigDirTo2);
+//                float rot1Mult = 1.0f - angleOrigDirToOrigDirTo1 / (angleOrigDirToOrigDirTo1 + angleOrigDirToOrigDirTo2);
+//                float rot2Mult = 1.0f - angleOrigDirToOrigDirTo2 / (angleOrigDirToOrigDirTo1 + angleOrigDirToOrigDirTo2);
 
                 V3 d1 = origDirTo1.getRotationTo(newDirTo1, V3::UNIT_Z) * origDir;
                 V3 d2 = origDirTo2.getRotationTo(newDirTo2, V3::UNIT_Z) * origDir;
                 
-                rotQuat = origDir.getRotationTo(d1 * rot1Mult + d2 * rot2Mult);
+                rotQuat = origDir.getRotationTo(d1 + d2);
             }
         }
 
@@ -462,7 +491,7 @@ namespace CM {
                 V3 origDirToAdj = adjPikets[i]->origPos - origPos;
                 origDirToAdj.z = 0;
 
-                V3 newDirToAdj = adjPikets[i]->getExtendedElevationPos() - pos;
+                V3 newDirToAdj = adjPikets[i]->getExtendedElevationPos(rate) - pos;
                 newDirToAdj.z = 0;
 
                 if (origDirToAdj.length() > 0.01 * PointsInMeter) {
@@ -647,20 +676,20 @@ namespace CM {
             return *res;
         }
         else {
-            if (const std::vector<CM::WallProj> *reverseW2d = cache.getWalls2d(-dirrection)) {
-                std::vector<CM::WallProj>copyForRevert = *reverseW2d;
-                std::reverse(copyForRevert.begin(), copyForRevert.end());
-                for (int i = 0; i < copyForRevert.size(); i++) {
-                    copyForRevert[i].to0XAngleBySelfDir = Radian(2 * M_PI) - copyForRevert[i].to0XAngleBySelfDir;
-                    copyForRevert[i].posBySelfDir.x = -copyForRevert[i].posBySelfDir.x;
-                }
-                cache.addWalls2d(dirrection, copyForRevert);
-                return getWalls2d(dirrection);
-            }
-            else {
+//            if (const std::vector<CM::WallProj> *reverseW2d = cache.getWalls2d(-dirrection)) {
+//                std::vector<CM::WallProj>copyForRevert = *reverseW2d;
+//                std::reverse(copyForRevert.begin(), copyForRevert.end());
+//                for (int i = 0; i < copyForRevert.size(); i++) {
+//                    copyForRevert[i].to0XAngleBySelfDir = Radian(2 * M_PI) - copyForRevert[i].to0XAngleBySelfDir;
+//                    copyForRevert[i].posBySelfDir.x = -copyForRevert[i].posBySelfDir.x;
+//                }
+//                cache.addWalls2d(dirrection, copyForRevert);
+//                return getWalls2d(dirrection);
+//            }
+//            else {
                 cache.addWalls2d(dirrection, CM::getWalls2d(piketEffectivePos, dirrection, classifiedWalls));
                 return getWalls2d(dirrection);
-            }
+//            } 
         }
     }
 
@@ -669,20 +698,20 @@ namespace CM {
             return *res;
         }
         else {
-            if (const std::vector<CM::WallProj> *reverseW2d = cache.getWalls2dWithConvexCorrection(-dirrection)) {
-                std::vector<CM::WallProj>copyForRevert = *reverseW2d;
-                std::reverse(copyForRevert.begin(), copyForRevert.end());
-                for (int i = 0; i < copyForRevert.size(); i++) {
-                    copyForRevert[i].to0XAngleBySelfDir = Radian(2 * M_PI) - copyForRevert[i].to0XAngleBySelfDir;
-                    copyForRevert[i].posBySelfDir.x = -copyForRevert[i].posBySelfDir.x;
-                }
-                cache.addWalls2dWithConvexCorrection(dirrection, copyForRevert);
-                return getWalls2dWithConvexCorrection(dirrection);
-            }
-            else {
+//            if (const std::vector<CM::WallProj> *reverseW2d = cache.getWalls2dWithConvexCorrection(-dirrection)) {
+//                std::vector<CM::WallProj>copyForRevert = *reverseW2d;
+//                std::reverse(copyForRevert.begin(), copyForRevert.end());
+//                for (int i = 0; i < copyForRevert.size(); i++) {
+//                    copyForRevert[i].to0XAngleBySelfDir = Radian(2 * M_PI) - copyForRevert[i].to0XAngleBySelfDir;
+//                    copyForRevert[i].posBySelfDir.x = -copyForRevert[i].posBySelfDir.x;
+//                }
+//                cache.addWalls2dWithConvexCorrection(dirrection, copyForRevert);
+//                return getWalls2dWithConvexCorrection(dirrection);
+//            }
+//            else {
                 cache.addWalls2dWithConvexCorrection(dirrection, CM::getWalls2dWithConvexCorrection(piketEffectivePos, dirrection, classifiedWalls));
                 return getWalls2dWithConvexCorrection(dirrection);
-            }
+//            }
         }
     }
 

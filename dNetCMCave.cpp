@@ -5,6 +5,9 @@
 #include "CMCave.h"
 #include <stdlib.h>
 #include <string.h>
+#include <sstream>
+#include <CMLog.h>
+#include <msclr\marshal_cppstd.h>
 
 namespace DotNetCaveModel {
 
@@ -12,11 +15,33 @@ namespace DotNetCaveModel {
 	using namespace msclr::interop;
 	using namespace System;
 	using namespace System::Collections::Generic;
+	using namespace msclr::interop;
+
+
+	class DNetCMLog : public CMLog {
+	public:
+		virtual void log(const std::string& message) {
+			std::cerr << message << std::endl;
+		}
+		virtual void logDebug(const std::string& message) {
+			std::cerr << message << std::endl;
+		}
+
+		static void init() {
+			if (!instatnce) {
+				instatnce = new DNetCMLog;
+			}
+		}
+	};
 
 	DNetCMCave::DNetCMCave() {
+		DNetCMLog::init();
+
 		CM::PointsInMeter = 1.0f;
 
 		cmCave = new Cave();
+		LOG("create cave: " << (void*)cmCave);
+
 		caveViewPrefs = new CaveViewPrefs();
 		//	caveViewPrefs->showDebug = true;
 	}
@@ -24,6 +49,7 @@ namespace DotNetCaveModel {
 
 	DNetCMCave::~DNetCMCave()
 	{
+		LOG("delete cave: " << (void*)cmCave);
 		delete cmCave;
 		cmCave = nullptr;
 
@@ -148,7 +174,7 @@ namespace DotNetCaveModel {
 		res.label = marshal_as< std::string>(temp);
 		res.pos = V3(x, y, z);
 		res.extendedElevationX = extendedElevationX;
-		res.col = Color(r, g, b);
+//		res.col = Color(r, g, b);
 		res.priz = (PiketMark)priz;
 		//res.hasWalls = hasWalls;
 
@@ -156,20 +182,27 @@ namespace DotNetCaveModel {
 	
 	}
 	void DNetCMCave::addVertice(DNPiketInfo^ piketInfo) {
-		cmCave->addVertice(piketInfo->toPiketMark());
+		auto piket = piketInfo->toPiketMark();
+		LOG("\tst id: " << piket.id << " name: " << piket.name << " pos:" << piket.pos);
+		cmCave->addVertice(piket);
 	}
 
 	void DNetCMCave::addVertice(DNPiketInfo^ piketInfo, int equatesVerticeId) {
-		cmCave->addVertice(piketInfo->toPiketMark(), equatesVerticeId);
+		auto piket = piketInfo->toPiketMark();
+		LOG("\tst id: " << piket.id << " name: " << piket.name << " pos:" << piket.pos);
+		cmCave->addVertice(piket, equatesVerticeId);
 	}
 
 	void DNetCMCave::addEdge(int verticeId0, int verticeId1)
 	{
+		//LOG("\tedge: " << verticeId0 << "- " << verticeId1);
+
 		cmCave->addEdge(verticeId0, verticeId1);
 	}
 
 	void DNetCMCave::addEdge(int verticeId0, int verticeId1, bool zSurvey, float r, float g, float b)
 	{
+		//LOG("\tedge: " << verticeId0 << "- " << verticeId1);
 		EdgeInfo info(verticeId0, verticeId1);
 		info.col = Color(r, g, b, 1.0f) ;
 		info.zsurvey = zSurvey;

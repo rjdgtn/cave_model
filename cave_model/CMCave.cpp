@@ -1,7 +1,8 @@
 // ---------------------------------------------------------------------------
 
 #define OGRE_DEBUG_MODE 1
-
+                   
+#include "CMtext.h"
 #include "CMCave.h"
 #include "CMAssertions.h"
 #include "stdio.h"           
@@ -12,8 +13,9 @@
 #include "CMtext.h"
 #include "CMcommon.h"
 #include <iostream>
-#include "CMLog.h"
-#include <math.h>
+#include "CMLog.h" 
+#include "CMcommon.h" 
+#include <math.h>  
 
 namespace CM {
 
@@ -46,18 +48,18 @@ namespace CM {
         wasInited = true;
     }
 
-    void Cave::convertToExtendedElevation() {
+    void Cave::convertToExtendedElevation(float rate) {
         AssertReturn(!wasInited, return;);
 
         std::tr1::unordered_map<int, Piket>::iterator pikiIt;
         for (pikiIt = pikets.begin(); pikiIt != pikets.end(); pikiIt++) {
-            pikiIt->second.convertToExtendedElevation();
+            pikiIt->second.convertToExtendedElevation(rate);
         }
     }
 
-    std::vector<CM::CrossPiketLineBesier3>Cave::calcOutineBesier() const {
+    std::vector<CM::CrossPiketLineBesier3> Cave::calcOutineBesier() const {
 
-        std::tr1::unordered_set<int>piketsForCreateCutOutline;
+        std::tr1::unordered_set<int> piketsForCreateCutOutline;
         std::vector<CrossPiketLineBesier3>outineBesier;
 
         AssertReturn(wasInited, LOG("fail to calc outline: cave not finish initialisation "); return outineBesier;);
@@ -92,7 +94,7 @@ namespace CM {
         caveViewPrefs.showBox = prefs.showBox;
         bool lookDirrectionChanged = (caveViewPrefs.lookDirrection != prefs.lookDirrection);
         caveViewPrefs.lookDirrection = prefs.lookDirrection;
-        caveViewPrefs.showOutline = prefs.showOutline;
+        caveViewPrefs.showOutline = prefs.showOutline;        
         bool generateWallsForNoWallsPiketsModeChanged = (caveViewPrefs.generateWallsForNoWallsPiketsMode != prefs.generateWallsForNoWallsPiketsMode);
 
         if (caveViewPrefs != prefs) {
@@ -119,10 +121,11 @@ namespace CM {
 
             return true;
         }
-        else {
+        else {               
             updateWallsSurrfaceMode();
             if (lookDirrectionChanged) {
                 buildOutline();
+                if (!caveViewPrefs.allOutlineCuts) buildOutlineCut();
                 return true;
             }
             else {
@@ -775,7 +778,7 @@ namespace CM {
             polyecol.a = 0.5f;
 
             const std::vector<WallProj>&rotWalls = piket->getWalls2d(piket->dirrection);
-            for (int i = 0; i < ((int)rotWalls.size()) + std::min(0, -caveViewPrefs.skipNum); i++) {
+            for (int i = 0; i < ((int)rotWalls.size())/* + std::min(0, -caveViewPrefs.skipNum)*/; i++) {
                 int ni = (i + 1) % rotWalls.size();
                 const WallProj& iWallProj = rotWalls[i];
                 const WallProj& niWallProj = rotWalls[ni];
@@ -817,11 +820,13 @@ namespace CM {
                 pikiIt->second.preProcessWalls(caveViewPrefs);
             }
 
-            genPiketsFakeWalls(caveViewPrefs.generateWallsForNoWallsPiketsMode);
-            prebuildInvalidated = false;
-
+            
             if (shouldConvertToExtendedElevation)
-                convertToExtendedElevation();
+                convertToExtendedElevation(1.0f -std::max(0, std::min(10, caveViewPrefs.skipNum)) / 10.0f);
+
+            genPiketsFakeWalls(caveViewPrefs.generateWallsForNoWallsPiketsMode);
+                                      
+            prebuildInvalidated = false;
         }
     }
 
@@ -881,12 +886,15 @@ namespace CM {
 
         resetOutput(OT_OUTLINE_CUT);
 
-        std::vector<CrossPiketLineBesier3>outlineCutsBezier;
+        std::vector<CrossPiketLineBesier3> outlineCutsBezier;
 
         unordered_map< const Piket*, std::vector< const Piket*> >buildWalls;
         std::tr1::unordered_map<int, Piket>::const_iterator it = pikets.begin();
-        for (; it != pikets.end(); it++) {
+        for (; it != pikets.end(); it++) {    
             const Piket* piket = &it->second;
+            if (!caveViewPrefs.allOutlineCuts && piketsForCreateCutOutline.count(piket->id) == 0) {
+                continue;
+            }
             outlineCutsBezier.clear();
             outlineCutsBezier.reserve(piket->classifiedWalls.size());
             piket->getCrossPiketLineBesier3(outlineCutsBezier);
@@ -903,11 +911,16 @@ namespace CM {
 
         LOG("Cave builld outline object started");
         resetOutput(OT_OUTLINE);
-
+                       
         // std::tr1::unordered_set<int>* piketsForCreateCutOutline
         std::vector<CrossPiketLineBesier3>outineBesier;
         outineBesier.reserve(pikets.size() * (2 + 1.05));
-        buildOutlineBezier(outineBesier);
+        piketsForCreateCutOutline.clear();
+        if (caveViewPrefs.allOutlineCuts) {
+            buildOutlineBezier(outineBesier);
+        } else {
+            buildOutlineBezier(outineBesier, &piketsForCreateCutOutline);
+        }
         addApproximartedCurvesToOuotput(outineBesier, OT_OUTLINE);
     }
 
@@ -921,13 +934,13 @@ namespace CM {
             AssertReturn(bPiket, continue);
 
             Color aCol = getColorForPiketAtEdge(aPiket, bPiket);
-//             aCol.r *= 0.5;
-//             aCol.g *= 0.5;
-//             aCol.b *= 0.5;
+//            aCol.r *= 0.5;
+//            aCol.g *= 0.5;
+//            aCol.b *= 0.5;
             Color bCol = getColorForPiketAtEdge(bPiket, aPiket);
-//             bCol.r *= 0.5;
-//             bCol.g *= 0.5;
-//             bCol.b *= 0.5;
+//            bCol.r *= 0.5;
+//            bCol.g *= 0.5;
+//            bCol.b *= 0.5;
             
             for (int i = 0; i < 4; i++) {
                 float irate = i / 4.0f;
@@ -1540,7 +1553,7 @@ namespace CM {
             int prevIdx = -1;
             int curIdx = -1;
 
-            int skipNum = std::max(caveViewPrefs.skipNum, 0);
+            int skipNum = 0;//td::max(caveViewPrefs.skipNum, 0);
             for (int i = 0; i < (int)trianOrder.size() - skipNum; i++) {
                 int idx = trianOrder.at(i).second;
                 if (prevIdx == -1 || curIdx == -1) {
@@ -1690,8 +1703,8 @@ namespace CM {
             V3 prevPikPos = prevPiket->piketEffectivePos;
             V3 roughDirrection = curPiket->wallsCenter - prevPiket->wallsCenter;
 
-            V3 curPiketDirrection = curPiket->dirrection;
-            V3 prevPiketDirrection = prevPiket->dirrection;
+            V3 curPiketDirrection = curPiket->getDirrectionForOverlay();
+            V3 prevPiketDirrection = prevPiket->getDirrectionForOverlay();
 
             const float codirectionToleranceAngle = M_PI * (30.0f / 180);
 
@@ -2319,6 +2332,18 @@ namespace CM {
     // return result;
     // }
 
+    V3 Cave::getVerticePos(int id) const {
+        const Piket* pik = getPiket(id);
+        if (pik) return pik->pos;
+        else return V3::ZERO;
+    }
+
+    std::string Cave::getVerticeName(int id) const {
+        const Piket* pik = getPiket(id);
+        if (pik) return pik->getName();
+        else return "";
+    }
+    
     const Piket* Cave::getPiket(int id) const {
         const Piket* result = NULL;
         unordered_map<int, Piket>::const_iterator fndRes = pikets.find(id);
@@ -2524,6 +2549,78 @@ namespace CM {
         outputPoly[type].clear();
         outputLines[type].clear();
         outputChanged.insert(type);
+    }
+
+    std::vector<int> Cave::getPath(int fromVerticeId, int toVerticeId) const {
+        LOG("path from vert: " << fromVerticeId << "  to vert:" << toVerticeId);
+        
+        std::map<int, float> verticeMinDist;
+        std::set<int> front;                   
+        std::set<int> nextFront;
+
+        front.insert(fromVerticeId);
+        verticeMinDist[fromVerticeId] = 0;
+        float destinationMinDistance = FLT_MAX;
+
+        for (int loopCounter = 0; loopCounter < pikets.size(); loopCounter++) {
+            for (int frontPiketId :  front) {
+                float frontPiketDist = verticeMinDist.at(frontPiketId);
+                const Piket* frontPiket = getPiket(frontPiketId);      
+                for(const Piket* adjPiket : frontPiket->adjPikets) { 
+                    int adjPiketId = adjPiket->id;
+                    float adjNewDist = frontPiketDist + adjPiket->pos.distance(frontPiket->pos);
+                    float adjCurDist = FLT_MAX;
+                    auto wit = verticeMinDist.find(adjPiketId);
+                    if (wit != verticeMinDist.end()) adjCurDist = wit->second;
+
+                    if (adjPiketId != toVerticeId) {
+                        if (adjNewDist < adjCurDist && 
+                            adjNewDist < destinationMinDistance) {  
+                            verticeMinDist[adjPiketId] = adjNewDist;    
+                            nextFront.insert(adjPiketId);
+                        }    
+                    } else {
+                        destinationMinDistance = std::min(destinationMinDistance, adjNewDist);
+                    }
+                }
+            }
+            std::swap(front, nextFront);
+            nextFront.clear();
+        }
+
+        if (destinationMinDistance != FLT_MAX && fromVerticeId != toVerticeId) {
+            std::list<int> result;
+            result.push_front(toVerticeId);
+            int curPiketId = toVerticeId;
+            for (int loopCounter = 0; loopCounter < pikets.size() && curPiketId != fromVerticeId; loopCounter++) {
+                const Piket* curPiket = getPiket(curPiketId);  
+                float minDist = FLT_MAX;    
+                int minDistAdjPiketId = 0;
+                for(const Piket* adjPiket : curPiket->adjPikets) {
+                    int adjPiketId = adjPiket->id;
+                    float adjPiketDist = FLT_MAX;
+                    if (verticeMinDist.count(adjPiketId) == 1) {
+                        adjPiketDist = verticeMinDist.at(adjPiketId);
+                    }
+                    if (minDist > adjPiketDist) {
+                       minDist = adjPiketDist;
+                       minDistAdjPiketId = adjPiketId;
+                    }
+                }  
+                curPiketId = minDistAdjPiketId;  
+                result.push_front(minDistAdjPiketId);  
+                LOG("add: " << ToString(minDistAdjPiketId) << " dist " << minDist );
+            }
+
+            std::vector<int> resultVec(result.begin(), result.end());
+                                                 
+            LOG("result dist: " << destinationMinDistance );
+            LOG("result: " << ToString(resultVec) );
+        
+            return resultVec;
+        } else {
+            return {};
+        }
     }
 
 }

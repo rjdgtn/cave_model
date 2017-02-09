@@ -42,11 +42,16 @@ namespace CM {
         bool isOutputChanged(OutputType type) {
             return outputChanged.count(type) == 1;
         }
-        std::vector<CrossPiketLineBesier3>calcOutineBesier() const ;
+        std::vector<CrossPiketLineBesier3> calcOutineBesier() const ;
         // const CaveViewPrefs& getCaveViewPrefs() const { return caveViewPrefs; }
+                                       
+        std::vector<int> getPath(int fromVerticeId, int toVerticeId) const;
 
+        V3 getVerticePos(int id) const;
+        std::string getVerticeName(int id) const;
+        
     protected:
-        void convertToExtendedElevation();
+        void convertToExtendedElevation(float rate = 1.0f);
 
         void buildFakeZSurveyPikets(); // обрабатывает зигзаговую съемку создавая дополнительные пикеты
         void prebuildPikets(); // prepare pikets for build walls and oultine
@@ -209,6 +214,8 @@ namespace CM {
         OutputType enabledToGenerate;
         float minZPos {FLT_MAX};
         float maxZPos {0};
+        
+        std::tr1::unordered_set<int> piketsForCreateCutOutline;
     };
 
 }
