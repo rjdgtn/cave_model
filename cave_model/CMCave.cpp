@@ -941,7 +941,11 @@ namespace CM {
 //            bCol.r *= 0.5;
 //            bCol.g *= 0.5;
 //            bCol.b *= 0.5;
-            
+
+//            addOutputLine(dst, line.a + (line.ac - line.a) * 0.1, line.ac, aCol, aCol);
+//            addOutputLine(dst, line.ac, line.bc, aCol, bCol);
+//            addOutputLine(dst, line.bc, line.b + (line.bc - line.b) * 0.1, bCol, bCol);
+                         
             for (int i = 0; i < 4; i++) {
                 float irate = i / 4.0f;
                 float nirate = (i + 1) / 4.0f;
@@ -1742,6 +1746,33 @@ namespace CM {
             V3 controlVecA = prevPiketDirrection.normalisedCopy();
             V3 controlVecB = -curPiketDirrection.normalisedCopy();
 
+            Quaternion projQuat = caveViewPrefs.lookDirrection.getRotationTo(V3::UNIT_Z);
+            V3 curPikPosProj = projQuat * curPikPos;
+            V3 prevPikPosProj = projQuat * prevPikPos;
+
+            auto limitFunc = [&projQuat, &curPikPosProj, &prevPikPosProj, &prevPiket, &curPiket] (const V3& a, V3& ac) {
+                V3 aProj = projQuat * a; 
+                V3 acProj = projQuat * ac;
+
+                P2 sect(0, 0);
+                S2 s1;
+                s1[0] = P2(curPikPosProj.x, curPikPosProj.y);
+                s1[1] = P2(prevPikPosProj.x, prevPikPosProj.y);  
+                S2 s2;
+                s2[0] = P2(aProj.x, aProj.y);
+                s2[1] = P2(acProj.x, acProj.y); 
+                bool isSect = intersect(s1, s2, sect);            
+
+                if (isSect) {
+                    //LOG("outline " << prevPiket->getName() << " - " << curPiket->getName());
+                    acProj.x = sect.x;    
+                    acProj.y = sect.y;               
+                    //LOG("\t" << ac);
+                    ac = projQuat.Inverse() * acProj;
+                    //LOG("\t" << ac);
+                }
+            };
+                                         
             CrossPiketLineBesier3 leftCurve;
             leftCurve.aid = prevPiket->id;
             leftCurve.bid = curPiket->id;
@@ -1749,7 +1780,10 @@ namespace CM {
             leftCurve.b = curPiketLeftRight.left;
             leftCurve.ac = leftCurve.a + controlVecA * leftCurve.b.distance(leftCurve.a) * 0.25;
             leftCurve.bc = leftCurve.b + controlVecB * leftCurve.b.distance(leftCurve.a) * 0.25;
-
+                         
+            limitFunc(leftCurve.a, leftCurve.ac);
+            limitFunc(leftCurve.b, leftCurve.bc);
+            
             CrossPiketLineBesier3 rightCurve;
             rightCurve.aid = prevPiket->id;
             rightCurve.bid = curPiket->id;
@@ -1757,7 +1791,10 @@ namespace CM {
             rightCurve.b = curPiketLeftRight.right;
             rightCurve.ac = rightCurve.a + controlVecA * rightCurve.b.distance(rightCurve.a) * 0.25;
             rightCurve.bc = rightCurve.b + controlVecB * rightCurve.b.distance(rightCurve.a) * 0.25;
-
+                       
+            limitFunc(rightCurve.a, rightCurve.ac);
+            limitFunc(rightCurve.b, rightCurve.bc); 
+         
             output.push_back(leftCurve);
             output.push_back(rightCurve);
         }

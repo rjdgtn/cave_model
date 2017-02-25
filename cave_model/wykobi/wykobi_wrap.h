@@ -14,4 +14,7 @@ inline Ogre::Vector3 P3toV3 (const wykobi::point3d<float>& p3) {
 
 typedef wykobi::plane<float, 3> plane3d;
 typedef wykobi::line<float,3> line3df;   
-typedef wykobi::point3d<float> point3df;
+typedef wykobi::point3d<float> P3; 
+typedef wykobi::point2d<float> P2; 
+typedef wykobi::segment<float,2> S2;
+

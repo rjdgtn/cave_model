@@ -3,7 +3,8 @@
 #include "CMAssertions.h"
 #include "wykobi_wrap.h"
 #include "CMDebug.h"    
-#include "CMLog.h"   
+#include "CMLog.h"     
+#include "CMtext.h"   
 #include <algorithm>
 
 using namespace wykobi;
@@ -660,11 +661,17 @@ namespace CM {
     }
 
     std::string Piket::getName() const {
-        std::string name;
+        std::vector<std::string> names;
         for (int i = 0; i < allP3D.size(); i++) {
-            name += allP3D[i].name + " ";
+            names.push_back( allP3D[i].name);// += allP3D[i].name + " ";
         }
-        return name;
+        std::sort(names.begin(), names.end());
+        names.erase(std::unique(names.begin(), names.end()), names.end());
+        if (names.size() == 1) {
+            return names.front();
+        } else {
+            return ToString(names);
+        }                    
         // if (allP3D.empty()) {
         // return "";
         // }
